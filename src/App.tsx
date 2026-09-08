@@ -4,7 +4,7 @@ import Header from './components/Header';
 import AuthDialog from './components/AuthDialog';
 import HomePage from './pages/HomePage';
 import SearchPage from './pages/SearchPage';
-import { supabaseConfigured } from './lib/supabase';
+import { supabaseConfigError, supabaseConfigured } from './lib/supabase';
 import './App.css';
 
 // The graph pulls in the charting library; keep it out of the landing bundle.
@@ -21,8 +21,8 @@ export default function App() {
 
       {!supabaseConfigured && (
         <div className="app-banner" role="status">
-          Supabase is not configured, so sign-in and user scores are unavailable. Public
-          scores still work.
+          Sign-in and user scores are unavailable: {supabaseConfigError} Public scores
+          still work.
         </div>
       )}
 

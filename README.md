@@ -176,7 +176,21 @@ Environment Variables**. `SUPABASE_SERVICE_ROLE_KEY` must never be given a `VITE
 prefix — that would bundle it into the client.
 
 If the Supabase variables are missing the app still runs: it serves the catalogue
-and public scores, and shows a banner saying sign-in and user scores are unavailable.
+and public scores, and shows a banner naming the variable that is missing or
+unusable.
+
+Three things catch people out on Vercel:
+
+- **Spelling is exact.** Vite only inlines variables named precisely
+  `VITE_SUPABASE_URL` and `VITE_SUPABASE_ANON_KEY`. An abbreviation like
+  `VITE_SUPA_ANON_KEY` is simply a different variable and will not be read.
+- **The two `VITE_` variables should be type *Config*, not *Secret*.** They are
+  public by design — the anon key is meant to ship to the browser and is what RLS
+  is there to guard. Vercel warns when a `VITE_`-prefixed variable is marked
+  secret, because the prefix publishes it regardless. Keep
+  `SUPABASE_SERVICE_ROLE_KEY` as a secret; it must never reach the client.
+- **`VITE_*` variables are inlined at build time**, so adding or editing one has
+  no effect until you redeploy.
 
 ## Scripts
 

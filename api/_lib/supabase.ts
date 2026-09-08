@@ -9,6 +9,18 @@ import { createClient, type SupabaseClient } from '@supabase/supabase-js';
 
 let cached: SupabaseClient | null = null;
 
+/** Accept a project URL pasted without its scheme, and ignore stray whitespace. */
+function normaliseUrl(raw: string | undefined): string | null {
+  const value = raw?.trim();
+  if (!value) return null;
+  const withScheme = /^https?:\/\//i.test(value) ? value : `https://${value}`;
+  try {
+    return new URL(withScheme).origin;
+  } catch {
+    return null;
+  }
+}
+
 /**
  * Returns null when the service credentials are not configured, which lets the
  * API keep serving live upstream data (just without persistence or user scores)
@@ -16,8 +28,8 @@ let cached: SupabaseClient | null = null;
  */
 export function serviceClient(): SupabaseClient | null {
   if (cached) return cached;
-  const url = process.env.SUPABASE_URL ?? process.env.VITE_SUPABASE_URL;
-  const key = process.env.SUPABASE_SERVICE_ROLE_KEY;
+  const url = normaliseUrl(process.env.SUPABASE_URL ?? process.env.VITE_SUPABASE_URL);
+  const key = process.env.SUPABASE_SERVICE_ROLE_KEY?.trim();
   if (!url || !key) return null;
   cached = createClient(url, key, {
     auth: { persistSession: false, autoRefreshToken: false },
