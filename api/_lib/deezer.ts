@@ -66,6 +66,42 @@ export async function searchArtists(query: string, limit = 10): Promise<DeezerAr
   }));
 }
 
+interface DeezerArtistTop {
+  data?: Array<{ title?: string; rank?: number; album?: { title?: string } }>;
+}
+
+export interface ArtistTopTracks {
+  /** Highest rank anywhere in the artist's catalogue — their peak. */
+  peakRank: number;
+  /** Summed rank of the artist's popular tracks, per album title. */
+  rankByAlbumTitle: Map<string, number>;
+}
+
+/**
+ * The artist's biggest tracks in one request.
+ *
+ * Two jobs: it orders their albums by how much popular material each one holds,
+ * and it establishes the artist's own ceiling — which is what lets a track be
+ * scored against its maker's catalogue instead of against all recorded music.
+ */
+export async function fetchArtistTop(artistId: number): Promise<ArtistTopTracks | null> {
+  const url = `${BASE}/artist/${artistId}/top?limit=100`;
+  const data = await fetchJsonOrNull<DeezerArtistTop>(url, { upstream: 'deezer' });
+  const rows = data?.data ?? [];
+  if (rows.length === 0) return null;
+
+  let peakRank = 0;
+  const rankByAlbumTitle = new Map<string, number>();
+  for (const t of rows) {
+    const rank = typeof t.rank === 'number' ? t.rank : 0;
+    if (rank > peakRank) peakRank = rank;
+    const title = t.album?.title;
+    if (!title) continue;
+    rankByAlbumTitle.set(title, (rankByAlbumTitle.get(title) ?? 0) + rank);
+  }
+  return { peakRank, rankByAlbumTitle };
+}
+
 export async function findAlbum(artist: string, album: string): Promise<number | null> {
   const q = `artist:"${artist.replace(/"/g, '')}" album:"${album.replace(/"/g, '')}"`;
   const url = `${BASE}/search/album?q=${encodeURIComponent(q)}&limit=5`;

@@ -36,7 +36,7 @@ export default function App() {
             <Route path="/search" element={<SearchPage />} />
             <Route path="/charts" element={<ChartsPage />} />
             <Route path="/about" element={<AboutPage />} />
-            <Route path="/artist/:id" element={<ArtistPage onRequestSignIn={openAuth} />} />
+            <Route path="/artist/:id" element={<ArtistPage />} />
             <Route path="/album/:id" element={<AlbumPage onRequestSignIn={openAuth} />} />
             <Route path="/track/:id" element={<TrackPage />} />
             <Route path="*" element={<NotFound />} />

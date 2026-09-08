@@ -119,6 +119,8 @@ export interface Album {
   tracksUserScore?: number | null;
   userRatingCount?: number;
   tracksLoaded?: number;
+  /** How much of the artist's popular material sits on this record. */
+  popularity?: number;
 }
 
 export interface AlbumResponse {
@@ -132,10 +134,11 @@ export interface Artist {
   itunesArtistId: number;
   name: string;
   genre: string | null;
+  imageUrl: string | null;
+  fans: number;
 }
 
 export interface ArtistResponse {
   artist: Artist;
   albums: Album[];
-  tracks: Track[];
 }

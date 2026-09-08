@@ -55,6 +55,13 @@ export const TUNING = {
     // log curve compresses 300k and 950k into half a decade and scores both as
     // hits, which is exactly the over-reading this replaces.
     deezerRank: { exponent: 0.55 },
+    /**
+     * How a track sits within its own artist's catalogue, as a share of their
+     * peak. The gentler exponent is the point: within one artist, the gap
+     * between a hit and a loved album cut is far smaller than raw play counts
+     * suggest.
+     */
+    catalogueShare: { exponent: 0.4 },
     lastfmPlays: { midpoint: 4.6, steepness: 1.5 },
     geniusPageviews: { midpoint: 5.2, steepness: 2.0 },
     // Post counts are small numbers; ten posts is already real discussion.
@@ -75,6 +82,18 @@ export const TUNING = {
    * most informative one, so the blend leans its way.
    */
   popularityExponent: 3,
+  /**
+   * How much of the streaming signal comes from where a track sits in its own
+   * artist's catalogue, versus its absolute play rank.
+   *
+   * This matters more than any weight in the model. Deezer's rank is a measure
+   * of *current* streaming, so it reads recency as quality: an eleven-year-old
+   * classic scores below a forgettable new release, and every track on an older
+   * record collapses into the bottom tier together. Judging a track against its
+   * own artist's peak removes both that age bias and the head start a famous
+   * name gets, which is what stops a beloved album cut being called garbage.
+   */
+  catalogueRelativeShare: 0.65,
   /**
    * Additive bonus for a sales certification, applied after the blend.
    *
@@ -140,6 +159,25 @@ export function rankToScore(rank: number, exponent: number): number {
   return round2(clamp(10 * clamp(rank / 1_000_000, 0, 1) ** exponent, 0, 10));
 }
 
+/**
+ * The streaming signal: absolute play rank blended with where the track sits in
+ * its own artist's catalogue. Without the artist's peak there is nothing to be
+ * relative to, so it falls back to the absolute reading.
+ */
+export function streamingScore(rank: number, artistPeakRank: number | null): number {
+  const absolute = rankToScore(rank, TUNING.curves.deezerRank.exponent);
+  if (!artistPeakRank || artistPeakRank <= 0) return absolute;
+
+  // The artist's own peak sets the ceiling; the track is placed beneath it by
+  // its share of that peak.
+  const ceiling = rankToScore(artistPeakRank, TUNING.curves.deezerRank.exponent);
+  const share = clamp(rank / artistPeakRank, 0, 1);
+  const relative = ceiling * share ** TUNING.curves.catalogueShare.exponent;
+
+  const w = TUNING.catalogueRelativeShare;
+  return round2(clamp(relative * w + absolute * (1 - w), 0, 10));
+}
+
 /** MusicBrainz votes are 0-5 stars; the score scale is 0-10. */
 const starsToScore = (stars: number) => round2(clamp(stars * 2, 0, 10));
 
@@ -154,6 +192,11 @@ export interface ScoreInputs {
   geniusPageviews?: number | null;
   /** Deezer track rank, roughly 0-1,000,000. */
   deezerRank?: number | null;
+  /**
+   * The artist's own highest-ranked track. When known, the track is scored
+   * against its maker's catalogue rather than against all recorded music.
+   */
+  artistPeakRank?: number | null;
   /** Last.fm playcount for the track. */
   lastfmPlays?: number | null;
   /** Reddit posts mentioning the track, and their combined upvotes. */
@@ -210,9 +253,15 @@ export function computePublicScore(inputs: ScoreInputs): PublicScore {
       source: 'deezer_rank',
       label: 'Deezer listener rank',
       kind: 'popularity',
-      score: rankToScore(inputs.deezerRank, curves.deezerRank.exponent),
+      score: streamingScore(inputs.deezerRank, inputs.artistPeakRank ?? null),
       weight: weights.deezerRank,
-      detail: { rank: inputs.deezerRank },
+      detail: {
+        rank: inputs.deezerRank,
+        artistPeak: inputs.artistPeakRank ?? null,
+        catalogueShare: inputs.artistPeakRank
+          ? round2(inputs.deezerRank / inputs.artistPeakRank)
+          : null,
+      },
     });
   }
 

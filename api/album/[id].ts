@@ -17,10 +17,13 @@ import {
   type ItunesTrack,
 } from '../_lib/itunes.js';
 import { cacheHeaders, normaliseTitle } from '../_lib/http.js';
+import { compactKey } from '../_lib/match.js';
 import { fetchAlbumRatings, findReleaseGroup, type MbTrackRatings } from '../_lib/musicbrainz.js';
 import {
   fetchAlbumPopularity,
+  fetchArtistTop,
   findAlbum,
+  searchArtists as searchDeezerArtists,
   searchTrackRank,
   type DeezerAlbumData,
 } from '../_lib/deezer.js';
@@ -182,6 +185,14 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       ),
     ]);
 
+    // The artist's peak, so each track can be judged against their own
+    // catalogue rather than against every record ever released.
+    const artistPeakRank = await searchDeezerArtists(album.artistName, 5)
+      .then((list) => list.find((a) => compactKey(a.name) === compactKey(album.artistName)) ?? list[0])
+      .then((a) => (a ? fetchArtistTop(a.id) : null))
+      .then((top) => top?.peakRank ?? null)
+      .catch(() => null);
+
     const deezerBackfill = await backfillDeezerRanks(
       album.artistName,
       tracks,
@@ -202,6 +213,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         releaseGroupRating,
         geniusPageviews: genius.get(t)?.pageviews ?? null,
         deezerRank: deezer?.rankByTitle.get(key) ?? deezerBackfill.get(t.trackId) ?? null,
+        artistPeakRank,
         lastfmPlays: lastfm?.listenersByTitle.get(key) ?? null,
         reddit: reddit.get(t) ?? null,
       });
