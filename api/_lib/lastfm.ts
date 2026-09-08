@@ -6,7 +6,7 @@
  * scrobble-derived listener counts, which are the broadest public signal of how
  * widely a track is actually listened to.
  */
-import { fetchJsonOrNull, normaliseTitle } from './http';
+import { fetchJsonOrNull, normaliseTitle } from './http.js';
 
 const BASE = 'https://ws.audioscrobbler.com/2.0';
 

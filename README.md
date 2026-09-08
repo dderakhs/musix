@@ -187,6 +187,22 @@ and public scores, and shows a banner saying sign-in and user scores are unavail
 | `npm run lint` | oxlint |
 | `npm run preview` | Serve the production build |
 
+## A note on imports under `api/`
+
+Relative imports inside `api/` carry explicit `.js` extensions
+(`import { fetchJson } from './http.js'`) even though the files are `.ts`.
+
+This is not optional. `package.json` sets `"type": "module"`, so Vercel compiles
+each function as NodeNext ESM, where extensionless relative specifiers are a
+`TS2835` error and — because Vercel type-checks but still deploys — the function
+ships anyway and then dies at runtime with `ERR_MODULE_NOT_FOUND`. The symptom is
+every `/api/*` call returning a platform error page instead of JSON.
+
+`tsconfig.api.json` therefore mirrors Vercel exactly (`module` and
+`moduleResolution` both `nodenext`), so `npm run build` fails locally on the same
+error rather than letting it reach production. Do not switch it to `bundler`
+resolution to make an import "work" — that only hides the failure until deploy.
+
 ## Licence
 
 The code is MIT. The music metadata belongs to its sources — MusicBrainz data is

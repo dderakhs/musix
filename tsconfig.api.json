@@ -6,9 +6,13 @@
     "types": ["node"],
     "skipLibCheck": true,
 
-    /* Vercel bundles the functions with esbuild, so use bundler resolution. */
-    "module": "esnext",
-    "moduleResolution": "bundler",
+    /* Must mirror how Vercel compiles api/*.ts: package.json sets "type":
+       "module", so Vercel's own tsconfig resolves these as NodeNext ESM and
+       requires explicit .js extensions on relative imports. Using "bundler"
+       here would let TS2835 errors through locally and only fail in the
+       deployed functions. */
+    "module": "nodenext",
+    "moduleResolution": "nodenext",
     "verbatimModuleSyntax": true,
     "moduleDetection": "force",
     "noEmit": true,

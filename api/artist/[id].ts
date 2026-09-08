@@ -11,10 +11,10 @@
  * the responses land.
  */
 import type { VercelRequest, VercelResponse } from '@vercel/node';
-import { artworkAt, classifyAlbum, lookupArtistDiscography } from '../_lib/itunes';
-import { cacheHeaders } from '../_lib/http';
-import { serviceClient } from '../_lib/supabase';
-import { param, requireGet, sendError, sendJson } from '../_lib/respond';
+import { artworkAt, classifyAlbum, lookupArtistDiscography } from '../_lib/itunes.js';
+import { cacheHeaders } from '../_lib/http.js';
+import { serviceClient } from '../_lib/supabase.js';
+import { param, requireGet, sendError, sendJson } from '../_lib/respond.js';
 
 const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 

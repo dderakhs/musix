@@ -6,7 +6,7 @@
  * Together they stand in for the "how well received is this track" half of the
  * public score, where MusicBrainz has no votes.
  */
-import { fetchJsonOrNull, normaliseTitle } from './http';
+import { fetchJsonOrNull, normaliseTitle } from './http.js';
 
 const BASE = 'https://api.deezer.com';
 

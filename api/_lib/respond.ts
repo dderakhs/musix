@@ -1,5 +1,5 @@
 import type { VercelRequest, VercelResponse } from '@vercel/node';
-import { UpstreamError } from './http';
+import { UpstreamError } from './http.js';
 
 export function sendJson(
   res: VercelResponse,

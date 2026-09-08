@@ -15,14 +15,14 @@ import {
   lookupAlbumTracks,
   type ItunesAlbum,
   type ItunesTrack,
-} from '../_lib/itunes';
-import { cacheHeaders, normaliseTitle } from '../_lib/http';
-import { fetchAlbumRatings, findReleaseGroup, type MbTrackRatings } from '../_lib/musicbrainz';
-import { fetchAlbumPopularity, findAlbum, type DeezerAlbumData } from '../_lib/deezer';
-import { fetchAlbumListeners, type LastfmAlbumData } from '../_lib/lastfm';
-import { computePublicScore, type PublicScore } from '../_lib/score';
-import { serviceClient } from '../_lib/supabase';
-import { param, requireGet, sendError, sendJson } from '../_lib/respond';
+} from '../_lib/itunes.js';
+import { cacheHeaders, normaliseTitle } from '../_lib/http.js';
+import { fetchAlbumRatings, findReleaseGroup, type MbTrackRatings } from '../_lib/musicbrainz.js';
+import { fetchAlbumPopularity, findAlbum, type DeezerAlbumData } from '../_lib/deezer.js';
+import { fetchAlbumListeners, type LastfmAlbumData } from '../_lib/lastfm.js';
+import { computePublicScore, type PublicScore } from '../_lib/score.js';
+import { serviceClient } from '../_lib/supabase.js';
+import { param, requireGet, sendError, sendJson } from '../_lib/respond.js';
 
 /** MusicBrainz is rate limited to ~1 req/s; give enrichment a hard ceiling. */
 const ENRICHMENT_BUDGET_MS = 9000;
@@ -241,12 +241,12 @@ async function persist(args: {
 
   // Drop rows iTunes no longer lists, so the (album, disc, track) unique index
   // cannot collide when a release is re-issued with different track ids.
+  // An empty keep-list has to skip the NOT IN entirely: `in ()` is a syntax error.
   const keepIds = scored.map(({ track }) => track.trackId);
-  await db.from('tracks').delete().eq('album_id', albumRow.id).not(
-    'itunes_track_id',
-    'in',
-    `(${keepIds.join(',')})`,
-  );
+  const stale = db.from('tracks').delete().eq('album_id', albumRow.id);
+  await (keepIds.length > 0
+    ? stale.not('itunes_track_id', 'in', `(${keepIds.join(',')})`)
+    : stale);
 
   const seen = new Set<string>();
   const rows = scored

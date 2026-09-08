@@ -6,9 +6,9 @@
  * once someone opens the artist or album page.
  */
 import type { VercelRequest, VercelResponse } from '@vercel/node';
-import { artworkAt, classifyAlbum, searchAlbums, searchArtists } from './_lib/itunes';
-import { cacheHeaders } from './_lib/http';
-import { param, requireGet, sendError, sendJson } from './_lib/respond';
+import { artworkAt, classifyAlbum, searchAlbums, searchArtists } from './_lib/itunes.js';
+import { cacheHeaders } from './_lib/http.js';
+import { param, requireGet, sendError, sendJson } from './_lib/respond.js';
 
 export default async function handler(req: VercelRequest, res: VercelResponse) {
   if (!requireGet(req, res)) return;

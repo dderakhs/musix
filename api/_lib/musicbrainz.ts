@@ -9,7 +9,7 @@
  * The service asks for max 1 request/second and a descriptive User-Agent; both
  * are honoured here (`http.ts` sets the UA, `sleep` paces the calls).
  */
-import { fetchJsonOrNull, normaliseTitle, sleep } from './http';
+import { fetchJsonOrNull, normaliseTitle, sleep } from './http.js';
 
 const BASE = 'https://musicbrainz.org/ws/2';
 const THROTTLE_MS = 1100;

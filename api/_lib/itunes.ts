@@ -5,7 +5,7 @@
  * complete, correctly ordered track listings (disc + track numbers, previews).
  * It is the spine of the catalogue; MusicBrainz and Deezer enrich it.
  */
-import { fetchJson, cacheHeaders } from './http';
+import { fetchJson, cacheHeaders } from './http.js';
 
 const BASE = 'https://itunes.apple.com';
 
