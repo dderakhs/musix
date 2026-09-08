@@ -101,6 +101,12 @@
 
 .detail-signin { margin: 0; }
 
+.detail-note {
+  margin: 0;
+  font-size: 13px;
+  line-height: 1.5;
+}
+
 .detail-error {
   margin: 10px 0 0;
   font-size: 13px;

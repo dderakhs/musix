@@ -109,10 +109,18 @@ export default function TrackDetail({
 
       <section className="detail-section">
         <h4 className="detail-section-title">Your rating</h4>
-        {canRate ? (
+        {canRate && track.id == null ? (
+          // Signed in, but the track was never written to the catalogue — which
+          // means the API is running without its database credentials. Say so,
+          // rather than showing a dead row of disabled buttons.
+          <p className="detail-note muted">
+            This track isn’t saved to the musix catalogue yet, so it can’t be rated. The
+            server is missing its Supabase service-role credentials.
+          </p>
+        ) : canRate ? (
           <RatingStrip
             value={myRating}
-            disabled={saving || track.id == null}
+            disabled={saving}
             onRate={onRate}
             onClear={onClear}
           />
