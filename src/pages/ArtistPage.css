@@ -52,12 +52,9 @@
 }
 .artist-filter { padding: 6px 13px; font-size: 13px; }
 
-.artist-graph-card { padding: 18px 16px 8px; }
+.artist-graph-card { padding: 18px 16px 10px; }
 
-.artist-grid-card {
-  padding: 18px;
-  margin-top: 16px;
-}
+.artist-gridblock { margin-bottom: 26px; }
 
 .artist-body {
   display: grid;

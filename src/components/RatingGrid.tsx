@@ -1,102 +1,98 @@
-import { useMemo } from 'react';
+import { useMemo, useState } from 'react';
 import type { Track } from '../lib/types';
 import type { GraphGroup } from './ScoreGraph';
 import { formatScore } from '../lib/format';
+import { TIERS, tierFor } from '../lib/tiers';
+import { useScoreMode } from '../lib/scoreMode';
+import TrackPreviewCard from './TrackPreviewCard';
 import './RatingGrid.css';
-
-export type Metric = 'public' | 'user' | 'mine';
 
 interface Props {
   groups: GraphGroup[];
-  metric: Metric;
-  onChangeMetric: (metric: Metric) => void;
   myRatings: Map<string, number>;
+  albumCover?: string | null;
   selectedTrackId?: string | null;
   onSelectTrack: (track: Track) => void;
-  /** "Yours" is only offered once the viewer can actually rate. */
-  canRate: boolean;
 }
 
-const METRICS: Array<{ id: Metric; label: string }> = [
-  { id: 'public', label: 'Public' },
-  { id: 'user', label: 'User' },
-  { id: 'mine', label: 'Yours' },
-];
-
-/** Which hue ramp a metric is drawn from — user-derived scores keep the orange identity. */
-const rampFor = (metric: Metric) => (metric === 'public' ? 'public' : 'user');
-
-function valueOf(track: Track, metric: Metric, myRatings: Map<string, number>): number | null {
-  if (metric === 'public') return track.publicScore;
-  if (metric === 'user') return track.userScore;
+/** The value the grid paints, per the site-wide score mode. */
+export function valueFor(
+  track: Track,
+  mode: 'public' | 'user' | 'mine',
+  myRatings: Map<string, number>,
+): number | null {
+  if (mode === 'public') return track.publicScore;
+  if (mode === 'user') return track.userScore;
   return track.id ? myRatings.get(track.id) ?? null : null;
 }
 
-/** Ratings are continuous but the ramp has ten steps; snap to the nearest. */
-const stepOf = (value: number) => Math.max(1, Math.min(10, Math.round(value)));
-
+/**
+ * The album/discography grid: one cell per track, coloured by the tier its score
+ * falls in. Reading a record's shape should not require reading a single number
+ * — though the number is always printed, so colour is never the only channel.
+ */
 export default function RatingGrid({
   groups,
-  metric,
-  onChangeMetric,
   myRatings,
+  albumCover = null,
   selectedTrackId,
   onSelectTrack,
-  canRate,
 }: Props) {
+  const { mode } = useScoreMode();
+  const [hover, setHover] = useState<{ track: Track; anchor: DOMRect } | null>(null);
+
   const filled = useMemo(() => groups.filter((g) => g.tracks.length > 0), [groups]);
-  const rows = useMemo(
-    () => Math.max(0, ...filled.map((g) => g.tracks.length)),
-    [filled],
-  );
+  const rows = useMemo(() => Math.max(0, ...filled.map((g) => g.tracks.length)), [filled]);
 
   if (filled.length === 0 || rows === 0) return null;
 
-  const ramp = rampFor(metric);
   const single = filled.length === 1;
-  const metrics = METRICS.filter((m) => m.id !== 'mine' || canRate);
+
+  const cellFor = (track: Track, group: GraphGroup, label: string, showLabel: boolean) => {
+    const value = valueFor(track, mode, myRatings);
+    const tier = tierFor(value);
+    const selected = track.id != null && track.id === selectedTrackId;
+
+    return (
+      <button
+        key={track.id ?? `${group.id}-${label}`}
+        type="button"
+        className="rgrid-cell"
+        data-rated={value != null}
+        data-selected={selected}
+        style={tier ? { background: tier.colour, color: tier.ink } : undefined}
+        aria-label={`${track.title}, ${group.label}, ${
+          value != null ? `${formatScore(value)} out of 10, ${tier?.label}` : 'no score'
+        }`}
+        onMouseEnter={(e) =>
+          setHover({ track, anchor: e.currentTarget.getBoundingClientRect() })
+        }
+        onFocus={(e) => setHover({ track, anchor: e.currentTarget.getBoundingClientRect() })}
+        onMouseLeave={() => setHover(null)}
+        onBlur={() => setHover(null)}
+        onClick={() => onSelectTrack(track)}
+      >
+        {showLabel && <span className="rgrid-cell-num">{label}</span>}
+        <span className="rgrid-cell-value">{value == null ? '–' : formatScore(value)}</span>
+      </button>
+    );
+  };
 
   return (
     <section className="rgrid" aria-label="Rating grid">
-      <header className="rgrid-head">
-        <div className="rgrid-metrics" role="group" aria-label="Score to colour by">
-          {metrics.map((m) => (
-            <button
-              key={m.id}
-              type="button"
-              className="btn rgrid-metric"
-              aria-pressed={metric === m.id}
-              onClick={() => onChangeMetric(m.id)}
-            >
-              {m.label}
-            </button>
-          ))}
-        </div>
-        <Legend ramp={ramp} />
-      </header>
+      <TierLegend />
 
       <div className="rgrid-scroll">
         {single ? (
           <div className="rgrid-flow">
-            {filled[0].tracks.map((track, index) => (
-              <Cell
-                key={track.id ?? index}
-                track={track}
-                label={String(track.trackNumber || index + 1)}
-                albumTitle={filled[0].label}
-                value={valueOf(track, metric, myRatings)}
-                ramp={ramp}
-                metric={metric}
-                selected={track.id != null && track.id === selectedTrackId}
-                onSelect={onSelectTrack}
-                showLabel
-              />
-            ))}
+            {filled[0].tracks.map((track, index) =>
+              cellFor(track, filled[0], String(track.trackNumber || index + 1), true),
+            )}
           </div>
         ) : (
           <div
             className="rgrid-matrix"
-            style={{ gridTemplateColumns: `34px repeat(${filled.length}, minmax(40px, 1fr))` }}
+            style={{ gridTemplateColumns: `34px repeat(${filled.length}, minmax(42px, 1fr))` }}
           >
             <div className="rgrid-corner" aria-hidden="true" />
             {filled.map((group) => (
@@ -107,124 +103,47 @@ export default function RatingGrid({
             ))}
 
             {Array.from({ length: rows }, (_, row) => (
-              <Row
-                key={row}
-                row={row}
-                groups={filled}
-                metric={metric}
-                ramp={ramp}
-                myRatings={myRatings}
-                selectedTrackId={selectedTrackId}
-                onSelectTrack={onSelectTrack}
-              />
+              <div className="rgrid-rowgroup" key={row} role="row">
+                <div className="rgrid-row-head muted">{row + 1}</div>
+                {filled.map((group) => {
+                  const track = group.tracks[row];
+                  return track ? (
+                    cellFor(track, group, String(track.trackNumber || row + 1), false)
+                  ) : (
+                    <div key={group.id} className="rgrid-cell-absent" />
+                  );
+                })}
+              </div>
             ))}
           </div>
         )}
       </div>
+
+      {hover && (
+        <TrackPreviewCard
+          track={hover.track}
+          albumTitle={
+            filled.find((g) => g.tracks.some((t) => t.id === hover.track.id))?.label ?? ''
+          }
+          albumCover={albumCover}
+          score={valueFor(hover.track, mode, myRatings)}
+          anchor={hover.anchor}
+        />
+      )}
     </section>
   );
 }
 
-interface RowProps {
-  row: number;
-  groups: GraphGroup[];
-  metric: Metric;
-  ramp: string;
-  myRatings: Map<string, number>;
-  selectedTrackId?: string | null;
-  onSelectTrack: (track: Track) => void;
-}
-
-function Row({ row, groups, metric, ramp, myRatings, selectedTrackId, onSelectTrack }: RowProps) {
+/** Names the bands, so a colour always has a word attached to it. */
+export function TierLegend() {
   return (
-    <>
-      <div className="rgrid-row-head muted">{row + 1}</div>
-      {groups.map((group) => {
-        const track = group.tracks[row];
-        if (!track) return <div key={group.id} className="rgrid-cell rgrid-cell-absent" />;
-        return (
-          <Cell
-            key={group.id}
-            track={track}
-            label={String(track.trackNumber || row + 1)}
-            albumTitle={group.label}
-            value={valueOf(track, metric, myRatings)}
-            ramp={ramp}
-            metric={metric}
-            selected={track.id != null && track.id === selectedTrackId}
-            onSelect={onSelectTrack}
-          />
-        );
-      })}
-    </>
-  );
-}
-
-interface CellProps {
-  track: Track;
-  label: string;
-  albumTitle: string;
-  value: number | null;
-  ramp: string;
-  metric: Metric;
-  selected: boolean;
-  onSelect: (track: Track) => void;
-  showLabel?: boolean;
-}
-
-function Cell({
-  track,
-  label,
-  albumTitle,
-  value,
-  ramp,
-  metric,
-  selected,
-  onSelect,
-  showLabel = false,
-}: CellProps) {
-  const rated = value != null;
-  const step = rated ? stepOf(value) : null;
-  const text = rated ? (metric === 'mine' ? value.toFixed(0) : formatScore(value)) : '–';
-
-  return (
-    <button
-      type="button"
-      className="rgrid-cell"
-      data-rated={rated}
-      data-selected={selected}
-      style={
-        step
-          ? {
-              // Each step ships its own ink, so the number always clears contrast.
-              background: `var(--rate-${ramp}-${step})`,
-              color: `var(--rate-${ramp}-${step}-ink)`,
-            }
-          : undefined
-      }
-      title={`${albumTitle} · ${track.trackNumber}. ${track.title} — ${rated ? text : 'unrated'}`}
-      aria-label={`${track.title}, ${albumTitle}, track ${track.trackNumber}, ${
-        rated ? `${text} out of 10` : 'no score'
-      }`}
-      onClick={() => onSelect(track)}
-    >
-      {showLabel && <span className="rgrid-cell-num">{label}</span>}
-      <span className="rgrid-cell-value">{text}</span>
-    </button>
-  );
-}
-
-/** A sequential ramp always ships a scale legend. */
-function Legend({ ramp }: { ramp: string }) {
-  return (
-    <div className="rgrid-legend">
-      <span className="muted rgrid-legend-cap">1</span>
-      <span className="rgrid-legend-swatches" aria-hidden="true">
-        {Array.from({ length: 10 }, (_, i) => (
-          <span key={i} style={{ background: `var(--rate-${ramp}-${i + 1})` }} />
-        ))}
-      </span>
-      <span className="muted rgrid-legend-cap">10</span>
+    <div className="tier-legend">
+      {TIERS.map((tier) => (
+        <span key={tier.id} className="tier-legend-item">
+          <span className="dot" style={{ background: tier.colour }} aria-hidden="true" />
+          {tier.label}
+        </span>
+      ))}
     </div>
   );
 }

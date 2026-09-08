@@ -1,0 +1,95 @@
+.comments { margin-top: 44px; }
+
+.comments-form { margin-bottom: 22px; }
+
+.comments-input { resize: vertical; min-height: 68px; line-height: 1.5; }
+
+.comments-formfoot {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 10px;
+  margin-top: 9px;
+}
+
+.comments-count { font-size: 11px; margin-right: auto; font-variant-numeric: tabular-nums; }
+
+.comments-signin {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  flex-wrap: wrap;
+  padding: 16px 18px;
+  margin-bottom: 22px;
+  font-size: 14px;
+}
+
+.comments-error { color: var(--critical); font-size: 13px; }
+.comments-empty { font-size: 14px; padding: 8px 0 4px; }
+
+.comments-list, .comments-replies {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+}
+
+.comments-replies {
+  margin: 14px 0 0 44px;
+  padding-left: 16px;
+  border-left: 1px solid var(--border);
+  gap: 14px;
+}
+
+.comments-reply { margin: 12px 0 0 44px; }
+
+.comment { display: flex; gap: 12px; }
+
+.comment-avatar {
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  background: var(--surface-3);
+  color: var(--text-secondary);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 13px;
+  font-weight: 650;
+  flex: none;
+  overflow: hidden;
+}
+.comment-avatar img { width: 100%; height: 100%; object-fit: cover; }
+
+.comment-body { min-width: 0; flex: 1; }
+
+.comment-meta {
+  display: flex;
+  align-items: baseline;
+  gap: 9px;
+  font-size: 12px;
+}
+.comment-author { font-weight: 620; font-size: 13px; }
+
+.comment-text {
+  margin: 4px 0 0;
+  font-size: 14px;
+  line-height: 1.55;
+  color: var(--text-secondary);
+  /* User text: wrap hard rather than let a long token stretch the layout. */
+  overflow-wrap: anywhere;
+  white-space: pre-wrap;
+}
+
+.comment-actions { display: flex; gap: 14px; margin-top: 6px; }
+
+.comment-action {
+  font-size: 12px;
+  font-weight: 550;
+  color: var(--text-muted);
+  padding: 0;
+}
+.comment-action:hover { color: var(--text-primary); }

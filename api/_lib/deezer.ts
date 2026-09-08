@@ -32,6 +32,40 @@ export interface DeezerAlbumData {
   rankByTitle: Map<string, number>;
 }
 
+interface DeezerSearchArtists {
+  data?: Array<{
+    id: number;
+    name: string;
+    picture_medium?: string;
+    picture_big?: string;
+    nb_fan?: number;
+  }>;
+}
+
+export interface DeezerArtist {
+  id: number;
+  name: string;
+  imageUrl: string | null;
+  /** Fan count — the only free popularity ordering available for artists. */
+  fans: number;
+}
+
+/**
+ * Artist photos and fan counts. iTunes has no artist imagery at all, and Deezer
+ * is the one keyless source that carries both a picture and a popularity figure,
+ * which is what lets a search for "drake" put the actual Drake first.
+ */
+export async function searchArtists(query: string, limit = 10): Promise<DeezerArtist[]> {
+  const url = `${BASE}/search/artist?q=${encodeURIComponent(query)}&limit=${limit}`;
+  const data = await fetchJsonOrNull<DeezerSearchArtists>(url, { upstream: 'deezer' });
+  return (data?.data ?? []).map((a) => ({
+    id: a.id,
+    name: a.name,
+    imageUrl: a.picture_big ?? a.picture_medium ?? null,
+    fans: a.nb_fan ?? 0,
+  }));
+}
+
 export async function findAlbum(artist: string, album: string): Promise<number | null> {
   const q = `artist:"${artist.replace(/"/g, '')}" album:"${album.replace(/"/g, '')}"`;
   const url = `${BASE}/search/album?q=${encodeURIComponent(q)}&limit=5`;

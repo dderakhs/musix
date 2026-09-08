@@ -1,0 +1,101 @@
+.sbox { position: relative; width: 100%; }
+
+.sbox-field {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 0 16px;
+  border-radius: 999px;
+  background: var(--surface-2);
+  border: 1px solid var(--border);
+  transition: border-color 140ms ease, background 140ms ease;
+}
+.sbox-field:focus-within {
+  border-color: var(--border-strong);
+  background: var(--surface-3);
+}
+
+.sbox-icon { width: 17px; height: 17px; color: var(--text-muted); flex: none; }
+
+.sbox-input {
+  flex: 1;
+  min-width: 0;
+  border: none;
+  outline: none;
+  background: none;
+  padding: 10px 0;
+  font-size: 14px;
+}
+.sbox-input::placeholder { color: var(--text-muted); }
+.sbox-input::-webkit-search-cancel-button { -webkit-appearance: none; }
+
+.sbox-hero .sbox-input { padding: 15px 0; font-size: 16px; }
+.sbox-hero .sbox-field { padding: 0 22px; }
+.sbox-hero .sbox-icon { width: 19px; height: 19px; }
+
+.sbox-panel {
+  position: absolute;
+  top: calc(100% + 8px);
+  left: 0;
+  right: 0;
+  z-index: 60;
+  background: var(--page-raised);
+  border: 1px solid var(--border-strong);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow);
+  padding: 6px;
+  max-height: min(70vh, 520px);
+  overflow-y: auto;
+}
+
+.sbox-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  width: 100%;
+  padding: 8px 10px;
+  border-radius: var(--radius-s);
+  text-align: left;
+  transition: background 90ms ease;
+}
+.sbox-row[data-active='true'] { background: var(--surface-2); }
+
+.sbox-thumb {
+  width: 44px;
+  height: 44px;
+  border-radius: 6px;
+  overflow: hidden;
+  background: var(--surface-3);
+  flex: none;
+}
+.sbox-thumb-round { border-radius: 50%; }
+.sbox-thumb img { width: 100%; height: 100%; object-fit: cover; }
+
+.sbox-text { display: flex; flex-direction: column; min-width: 0; gap: 1px; }
+.sbox-title {
+  font-size: 14px;
+  font-weight: 550;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.sbox-sub {
+  font-size: 12px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.sbox-all {
+  width: 100%;
+  padding: 10px;
+  margin-top: 4px;
+  border-top: 1px solid var(--border);
+  font-size: 13px;
+  color: var(--text-secondary);
+  text-align: left;
+  border-radius: var(--radius-s);
+}
+.sbox-all:hover { background: var(--surface-2); color: var(--text-primary); }
+
+.sbox-empty { padding: 16px; font-size: 13px; text-align: center; }

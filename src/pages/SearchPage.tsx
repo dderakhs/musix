@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react';
 import { Link, useSearchParams } from 'react-router-dom';
 import { searchCatalogue } from '../lib/api';
 import type { SearchResponse } from '../lib/types';
-import { formatYear } from '../lib/format';
+import { formatDuration, formatYear } from '../lib/format';
 import './SearchPage.css';
 
 export default function SearchPage() {
@@ -35,41 +35,57 @@ export default function SearchPage() {
   if (!query) {
     return (
       <div className="container search-page">
-        <p className="muted">Type an artist or album in the search box above.</p>
+        <p className="muted">Type an artist, album or song in the search box above.</p>
       </div>
     );
   }
 
+  const empty =
+    data && data.artists.length === 0 && data.albums.length === 0 && data.songs.length === 0;
+
   return (
     <div className="container search-page">
       <h1 className="search-heading">
-        Results for <span className="search-query">{query}</span>
+        <span className="muted">Results for</span> {query}
       </h1>
 
-      {error && <p className="search-error" role="alert">{error}</p>}
+      {error && (
+        <p className="search-error" role="alert">
+          {error}
+        </p>
+      )}
 
       {loading && !data && (
         <div className="search-grid">
-          {Array.from({ length: 8 }, (_, i) => (
-            <div key={i} className="skeleton search-skeleton" />
+          {Array.from({ length: 10 }, (_, i) => (
+            <div key={i} className="skeleton search-skel" />
           ))}
         </div>
       )}
 
       {data && (
-        <div style={{ opacity: loading ? 0.55 : 1 }}>
+        <div style={{ opacity: loading ? 0.5 : 1 }}>
           {data.artists.length > 0 && (
             <section className="search-section">
-              <h2 className="search-section-title">Artists</h2>
-              <div className="search-artists">
+              <h2 className="section-title">Artists</h2>
+              <div className="rail">
                 {data.artists.map((artist) => (
                   <Link
                     key={artist.itunesArtistId}
-                    className="card search-artist"
+                    className="artistcard"
                     to={`/artist/${artist.itunesArtistId}`}
                   >
-                    <span className="search-artist-name">{artist.name}</span>
-                    {artist.genre && <span className="muted search-artist-genre">{artist.genre}</span>}
+                    <span className="artistcard-photo">
+                      {artist.imageUrl ? (
+                        <img src={artist.imageUrl} alt="" loading="lazy" />
+                      ) : (
+                        <span className="artistcard-initial" aria-hidden="true">
+                          {artist.name.slice(0, 1)}
+                        </span>
+                      )}
+                    </span>
+                    <span className="artistcard-name">{artist.name}</span>
+                    {artist.genre && <span className="muted artistcard-genre">{artist.genre}</span>}
                   </Link>
                 ))}
               </div>
@@ -78,35 +94,51 @@ export default function SearchPage() {
 
           {data.albums.length > 0 && (
             <section className="search-section">
-              <h2 className="search-section-title">Albums</h2>
+              <h2 className="section-title">Albums</h2>
               <div className="search-grid">
                 {data.albums.map((album) => (
                   <Link
                     key={album.itunesCollectionId}
-                    className="search-album"
+                    className="albumcard"
                     to={`/album/${album.itunesCollectionId}`}
                   >
-                    <div className="search-cover">
-                      {album.coverUrl ? (
-                        <img src={album.coverUrl} alt="" loading="lazy" />
-                      ) : (
-                        <div className="search-cover-empty" aria-hidden="true" />
-                      )}
-                    </div>
-                    <div className="search-album-title">{album.title}</div>
-                    <div className="muted search-album-meta">
+                    <span className="albumcard-art">
+                      {album.coverUrl && <img src={album.coverUrl} alt="" loading="lazy" />}
+                    </span>
+                    <span className="albumcard-title">{album.title}</span>
+                    <span className="muted albumcard-meta">
                       {album.artistName}
                       {album.releaseDate ? ` · ${formatYear(album.releaseDate)}` : ''}
-                    </div>
+                    </span>
                   </Link>
                 ))}
               </div>
             </section>
           )}
 
-          {data.artists.length === 0 && data.albums.length === 0 && !loading && (
-            <p className="muted">Nothing found for “{query}”.</p>
+          {data.songs.length > 0 && (
+            <section className="search-section">
+              <h2 className="section-title">Songs</h2>
+              <ul className="songlist">
+                {data.songs.map((song) => (
+                  <li key={song.itunesTrackId}>
+                    <Link className="songrow" to={`/track/${song.itunesTrackId}`}>
+                      <span className="songrow-art">
+                        {song.coverUrl && <img src={song.coverUrl} alt="" loading="lazy" />}
+                      </span>
+                      <span className="songrow-text">
+                        <span className="songrow-title">{song.title}</span>
+                        <span className="muted songrow-artist">{song.artistName}</span>
+                      </span>
+                      <span className="muted songrow-time">{formatDuration(song.durationMs)}</span>
+                    </Link>
+                  </li>
+                ))}
+              </ul>
+            </section>
           )}
+
+          {empty && !loading && <p className="muted">Nothing found for “{query}”.</p>}
         </div>
       )}
     </div>

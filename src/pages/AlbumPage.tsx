@@ -1,25 +1,18 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
-import { Link, useParams } from 'react-router-dom';
+import { Link, useParams, useSearchParams } from 'react-router-dom';
 import { fetchAlbum } from '../lib/api';
 import type { AggregateScore } from '../lib/ratings';
 import type { AlbumResponse, Track } from '../lib/types';
 import { formatScore, formatYear, pluralise } from '../lib/format';
+import { tierFor } from '../lib/tiers';
+import { useScoreMode } from '../lib/scoreMode';
 import { useRatingSurface } from '../lib/useRatingSurface';
 import ScoreGraph, { type SeriesKey } from '../components/ScoreGraph';
-import RatingGrid, { type Metric } from '../components/RatingGrid';
+import RatingGrid, { valueFor } from '../components/RatingGrid';
 import TrackTable from '../components/TrackTable';
 import TrackDetail from '../components/TrackDetail';
+import Comments from '../components/Comments';
 import './AlbumPage.css';
-
-/** Upstreams wear their own capitalisation, not CSS's idea of it. */
-const SOURCE_NAMES: Record<string, string> = {
-  itunes: 'iTunes',
-  musicbrainz: 'MusicBrainz',
-  deezer: 'Deezer',
-  lastfm: 'Last.fm',
-  genius: 'Genius',
-  reddit: 'Reddit',
-};
 
 interface Props {
   onRequestSignIn: () => void;
@@ -27,15 +20,23 @@ interface Props {
 
 export default function AlbumPage({ onRequestSignIn }: Props) {
   const { id = '' } = useParams();
+  const [params] = useSearchParams();
+  const focusTrackId = params.get('track');
+
+  const { mode, label } = useScoreMode();
   const [data, setData] = useState<AlbumResponse | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [selectedTrackId, setSelectedTrackId] = useState<string | null>(null);
   const [visible, setVisible] = useState<Record<SeriesKey, boolean>>({
     publicScore: true,
-    userScore: true,
+    userScore: false,
   });
-  const [metric, setMetric] = useState<Metric>('public');
+
+  // The graph leads with whichever score the site is set to.
+  useEffect(() => {
+    setVisible({ publicScore: mode === 'public', userScore: mode !== 'public' });
+  }, [mode]);
 
   useEffect(() => {
     const controller = new AbortController();
@@ -44,7 +45,15 @@ export default function AlbumPage({ onRequestSignIn }: Props) {
     setSelectedTrackId(null);
     fetchAlbum(id, controller.signal)
       .then((response) => {
-        if (!controller.signal.aborted) setData(response);
+        if (controller.signal.aborted) return;
+        setData(response);
+        // Arriving from a song search or the chart: open on that track.
+        if (focusTrackId) {
+          const match = response.tracks.find(
+            (t) => String(t.itunesTrackId ?? '') === focusTrackId,
+          );
+          if (match?.id) setSelectedTrackId(match.id);
+        }
       })
       .catch((err: unknown) => {
         if (controller.signal.aborted) return;
@@ -54,7 +63,7 @@ export default function AlbumPage({ onRequestSignIn }: Props) {
         if (!controller.signal.aborted) setLoading(false);
       });
     return () => controller.abort();
-  }, [id]);
+  }, [id, focusTrackId]);
 
   const tracks = useMemo(() => data?.tracks ?? [], [data]);
   const trackIds = useMemo(
@@ -84,8 +93,8 @@ export default function AlbumPage({ onRequestSignIn }: Props) {
   if (loading) {
     return (
       <div className="container album-page">
-        <div className="skeleton" style={{ height: 180, borderRadius: 10, marginBottom: 24 }} />
-        <div className="skeleton" style={{ height: 340, borderRadius: 10 }} />
+        <div className="skeleton" style={{ height: 240, borderRadius: 14, marginBottom: 26 }} />
+        <div className="skeleton" style={{ height: 260, borderRadius: 14 }} />
       </div>
     );
   }
@@ -100,8 +109,11 @@ export default function AlbumPage({ onRequestSignIn }: Props) {
 
   const { album } = data;
   const selectedTrack: Track | null = tracks.find((t) => t.id === selectedTrackId) ?? null;
-  const meanPublic = mean(tracks.map((t) => t.publicScore));
-  const meanUser = mean(tracks.map((t) => t.userScore));
+  const isSingle = tracks.length <= 2 || album.albumType === 'single';
+
+  const values = tracks.map((t) => valueFor(t, mode, myRatings)).filter((v): v is number => v != null);
+  const headline = values.length > 0 ? values.reduce((a, b) => a + b, 0) / values.length : null;
+  const tier = tierFor(headline);
   const totalRatings = tracks.reduce((sum, t) => sum + t.userRatingCount, 0);
 
   const groups = [
@@ -115,19 +127,17 @@ export default function AlbumPage({ onRequestSignIn }: Props) {
 
   return (
     <div className="container album-page">
-      <header className="album-head">
-        {album.coverUrlLarge || album.coverUrl ? (
-          <img
-            className="album-cover"
-            src={album.coverUrlLarge ?? album.coverUrl ?? ''}
-            alt={`${album.title} cover art`}
-          />
-        ) : (
-          <div className="album-cover album-cover-empty" aria-hidden="true" />
-        )}
+      <header className="album-hero">
+        <div className="album-heroart">
+          {album.coverUrlLarge || album.coverUrl ? (
+            <img src={album.coverUrlLarge ?? album.coverUrl ?? ''} alt={`${album.title} cover art`} />
+          ) : (
+            <div className="album-heroart-empty" aria-hidden="true" />
+          )}
+        </div>
 
-        <div className="album-head-text">
-          <span className="tag">{album.albumType}</span>
+        <div className="album-herotext">
+          <span className="tag">{isSingle ? 'Single' : album.albumType}</span>
           <h1 className="album-title">{album.title}</h1>
           <p className="album-artist">
             {album.itunesArtistId ? (
@@ -138,67 +148,64 @@ export default function AlbumPage({ onRequestSignIn }: Props) {
             <span className="muted">
               {album.releaseDate ? ` · ${formatYear(album.releaseDate)}` : ''}
               {album.genre ? ` · ${album.genre}` : ''}
+              {!isSingle ? ` · ${pluralise(tracks.length, 'track')}` : ''}
             </span>
           </p>
 
-          <dl className="album-stats">
-            <div>
-              <dt><span className="dot" style={{ background: 'var(--series-public)' }} />Public score</dt>
-              <dd>{formatScore(meanPublic)}</dd>
-              <span className="muted album-stat-note">mean across {pluralise(tracks.length, 'track')}</span>
-            </div>
-            <div>
-              <dt><span className="dot" style={{ background: 'var(--series-user)' }} />User score</dt>
-              <dd>{formatScore(meanUser)}</dd>
-              <span className="muted album-stat-note">
-                {totalRatings > 0 ? pluralise(totalRatings, 'rating') : 'no ratings yet'}
+          <div className="album-headline">
+            <span
+              className="album-bigscore"
+              style={tier ? { background: tier.colour, color: tier.ink } : undefined}
+            >
+              {formatScore(headline)}
+            </span>
+            <span className="album-headlinetext">
+              <span className="album-tiername">{tier?.label ?? 'Not rated yet'}</span>
+              <span className="muted album-headlinesub">
+                {label}
+                {mode === 'user' && totalRatings > 0 ? ` · ${pluralise(totalRatings, 'rating')}` : ''}
               </span>
-            </div>
-          </dl>
-
-          <p className="muted album-sources">
-            Sources: {Object.entries(data.sources)
-              .filter(([, on]) => on)
-              .map(([name]) => SOURCE_NAMES[name] ?? name)
-              .join(' · ')}
-          </p>
+            </span>
+          </div>
         </div>
       </header>
 
-      <section className="card album-graph-card">
-        <ScoreGraph
+      {/* The grid leads: the shape of the record before any of the detail. */}
+      <section className="album-block">
+        <RatingGrid
           groups={groups}
-          xAxis="tracks"
-          visible={visible}
-          onToggleSeries={(key) => setVisible((v) => ({ ...v, [key]: !v[key] }))}
+          myRatings={myRatings}
+          albumCover={album.coverUrl}
           selectedTrackId={selectedTrackId}
           onSelectTrack={(track) => setSelectedTrackId(track.id)}
-          emptyMessage="No public reception data found for this release yet — rate a track to start the user score."
         />
       </section>
 
-      <section className="card album-grid-card">
-        <h2 className="album-section-title">Every track, by score</h2>
-        <RatingGrid
-          groups={groups}
-          metric={metric}
-          onChangeMetric={setMetric}
-          myRatings={myRatings}
-          selectedTrackId={selectedTrackId}
-          onSelectTrack={(track) => setSelectedTrackId(track.id)}
-          canRate={canRate}
-        />
-      </section>
+      {!isSingle && (
+        <section className="album-block card album-graphcard">
+          <ScoreGraph
+            groups={groups}
+            xAxis="tracks"
+            visible={visible}
+            onToggleSeries={(key) => setVisible((v) => ({ ...v, [key]: !v[key] }))}
+            selectedTrackId={selectedTrackId}
+            onSelectTrack={(track) => setSelectedTrackId(track.id)}
+            emptyMessage="No public reception data for this release yet — rate a track to start the user score."
+          />
+        </section>
+      )}
 
       <div className="album-body">
         <section>
-          <h2 className="album-section-title">Tracklist</h2>
+          <h2 className="section-title">{isSingle ? 'Track' : 'Tracklist'}</h2>
           <TrackTable
             tracks={tracks}
             myRatings={myRatings}
             selectedTrackId={selectedTrackId}
             onSelect={(track) => setSelectedTrackId(track.id)}
           />
+
+          <Comments albumId={album.id} onRequestSignIn={onRequestSignIn} />
         </section>
 
         <div className="album-side">
@@ -206,7 +213,7 @@ export default function AlbumPage({ onRequestSignIn }: Props) {
             <TrackDetail
               track={selectedTrack}
               albumTitle={album.title}
-              coverUrl={album.coverUrl}
+              coverUrl={selectedTrack.preview?.artUrl ?? album.coverUrl}
               myRating={selectedTrack.id ? myRatings.get(selectedTrack.id) ?? null : null}
               canRate={canRate}
               saving={saving}
@@ -218,17 +225,12 @@ export default function AlbumPage({ onRequestSignIn }: Props) {
             />
           ) : (
             <div className="card album-hint muted">
-              Pick a track to see how its public score was built — and to add your own rating.
+              Hover a cell for a preview, or pick one to see how its score was built — and to
+              rate it yourself.
             </div>
           )}
         </div>
       </div>
     </div>
   );
-}
-
-function mean(values: Array<number | null>): number | null {
-  const present = values.filter((v): v is number => v != null);
-  if (present.length === 0) return null;
-  return present.reduce((a, b) => a + b, 0) / present.length;
 }

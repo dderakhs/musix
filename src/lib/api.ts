@@ -1,4 +1,4 @@
-import type { AlbumResponse, ArtistResponse, SearchResponse } from './types';
+import type { AlbumResponse, ArtistResponse, ChartEntry, SearchResponse } from './types';
 
 class ApiError extends Error {
   // Written out longhand rather than as a parameter property: the app tsconfig
@@ -63,5 +63,15 @@ export const fetchArtist = (id: string | number, signal?: AbortSignal) =>
 
 export const fetchAlbum = (id: string | number, signal?: AbortSignal) =>
   get<AlbumResponse>(`/api/album/${encodeURIComponent(String(id))}`, signal);
+
+export const fetchCharts = (signal?: AbortSignal) =>
+  get<{ songs: ChartEntry[] }>('/api/charts', signal);
+
+/** Resolve a song to the album page that can render it. */
+export const fetchTrack = (id: string | number, signal?: AbortSignal) =>
+  get<{ itunesTrackId: number; itunesCollectionId: number; title: string; artistName: string }>(
+    `/api/track/${encodeURIComponent(String(id))}`,
+    signal,
+  );
 
 export { ApiError };

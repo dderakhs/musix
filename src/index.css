@@ -1,207 +1,71 @@
 /*
- * musix design tokens.
+ * musix design tokens — dark first.
  *
- * The chart palette is the validated reference instance from the data-viz
- * method: two categorical slots (blue = public score, orange = user score),
- * checked all-pairs against both surfaces. Dark values are separately stepped
- * for the dark surface, not an automatic inversion.
+ * Dark is the default look rather than a system-following variant; light is an
+ * explicit opt-in via the header toggle. Both are painted explicitly, so the
+ * page never borrows a background from the host.
+ *
+ * Rating colours are not here: they live in src/lib/tiers.ts, because a tier is
+ * a label and a colour together and the two must never drift apart.
  */
 
 :root {
+  color-scheme: dark;
+
+  --page:           #09090b;
+  --page-raised:    #0e0e11;
+  --surface-1:      #131317;
+  --surface-2:      #1c1c21;
+  --surface-3:      #26262d;
+
+  --text-primary:   #f4f4f5;
+  --text-secondary: #a5a5ae;
+  --text-muted:     #71717a;
+
+  --border:         rgba(255, 255, 255, 0.08);
+  --border-strong:  rgba(255, 255, 255, 0.16);
+  --grid:           #26262d;
+  --axis:           #3f3f46;
+  --band:           rgba(255, 255, 255, 0.028);
+
+  /* Chart series. Two slots, validated all-pairs against this surface. */
+  --series-public:  #3b9df0;
+  --series-user:    #f0803c;
+
+  --accent:         #3b9df0;
+  --critical:       #e04b46;
+  --good:           #2fbf5c;
+
+  --radius:   14px;
+  --radius-s: 9px;
+  --shadow:   0 1px 2px rgba(0, 0, 0, 0.6), 0 12px 32px rgba(0, 0, 0, 0.45);
+
+  --font: 'Inter', system-ui, -apple-system, 'Segoe UI', sans-serif;
+}
+
+:root[data-theme='light'] {
   color-scheme: light;
 
-  /* surfaces & ink */
-  --page:           #f9f9f7;
-  --surface-1:      #fcfcfb;
-  --surface-2:      #f2f1ed;
-  --text-primary:   #0b0b0b;
-  --text-secondary: #52514e;
-  --text-muted:     #898781;
-  --grid:           #e1e0d9;
-  --axis:           #c3c2b7;
-  --border:         rgba(11, 11, 11, 0.10);
-  --band:           rgba(11, 11, 11, 0.028);
+  --page:           #f7f7f8;
+  --page-raised:    #fbfbfc;
+  --surface-1:      #ffffff;
+  --surface-2:      #f1f1f3;
+  --surface-3:      #e6e6ea;
 
-  /* chart series */
+  --text-primary:   #0b0b0c;
+  --text-secondary: #52525b;
+  --text-muted:     #7a7a85;
+
+  --border:         rgba(11, 11, 12, 0.10);
+  --border-strong:  rgba(11, 11, 12, 0.20);
+  --grid:           #e4e4e7;
+  --axis:           #c4c4cc;
+  --band:           rgba(11, 11, 12, 0.028);
+
   --series-public:  #2a78d6;
-  --series-user:    #eb6834;
+  --series-user:    #d9601f;
 
-  /* status */
-  --good:           #0ca30c;
-  --critical:       #d03b3b;
-
-
-  /* Rating ramp: one hue per series, stepped 1-10. Colour carries magnitude, so
-     this is a sequential ramp (single hue, light to dark on the light surface and
-     dark to light on the dark one) rather than a rainbow. Each step ships the ink
-     colour that clears 4.5:1 against it, so the number inside a cell is always
-     legible. Generated and contrast-checked; see the rating grid legend. */
-  --rate-public-1: #e1eeff;
-  --rate-public-1-ink: #0b0b0b;
-  --rate-public-2: #c7dffe;
-  --rate-public-2-ink: #0b0b0b;
-  --rate-public-3: #add0fe;
-  --rate-public-3-ink: #0b0b0b;
-  --rate-public-4: #92c0fd;
-  --rate-public-4-ink: #0b0b0b;
-  --rate-public-5: #7bb0f7;
-  --rate-public-5-ink: #0b0b0b;
-  --rate-public-6: #63a1f1;
-  --rate-public-6-ink: #0b0b0b;
-  --rate-public-7: #4a91ea;
-  --rate-public-7-ink: #0b0b0b;
-  --rate-public-8: #2f80e3;
-  --rate-public-8-ink: #0b0b0b;
-  --rate-public-9: #0470db;
-  --rate-public-9-ink: #ffffff;
-  --rate-public-10: #0062c2;
-  --rate-public-10-ink: #ffffff;
-  --rate-user-1: #ffe7df;
-  --rate-user-1-ink: #0b0b0b;
-  --rate-user-2: #ffd1c0;
-  --rate-user-2-ink: #0b0b0b;
-  --rate-user-3: #febba2;
-  --rate-user-3-ink: #0b0b0b;
-  --rate-user-4: #f9a587;
-  --rate-user-4-ink: #0b0b0b;
-  --rate-user-5: #f1916e;
-  --rate-user-5-ink: #0b0b0b;
-  --rate-user-6: #e87c54;
-  --rate-user-6-ink: #0b0b0b;
-  --rate-user-7: #df6637;
-  --rate-user-7-ink: #0b0b0b;
-  --rate-user-8: #d64f0d;
-  --rate-user-8-ink: #0b0b0b;
-  --rate-user-9: #c04403;
-  --rate-user-9-ink: #ffffff;
-  --rate-user-10: #a93b03;
-  --rate-user-10-ink: #ffffff;
-
-  --radius:   10px;
-  --radius-s: 6px;
-  --shadow:   0 1px 2px rgba(11, 11, 11, 0.06), 0 8px 24px rgba(11, 11, 11, 0.06);
-
-  --font: system-ui, -apple-system, 'Segoe UI', sans-serif;
-}
-
-@media (prefers-color-scheme: dark) {
-  :root:where(:not([data-theme='light'])) {
-    color-scheme: dark;
-    --page:           #0d0d0d;
-    --surface-1:      #1a1a19;
-    --surface-2:      #232322;
-    --text-primary:   #ffffff;
-    --text-secondary: #c3c2b7;
-    --text-muted:     #898781;
-    --grid:           #2c2c2a;
-    --axis:           #383835;
-    --border:         rgba(255, 255, 255, 0.10);
-    --band:           rgba(255, 255, 255, 0.035);
-    --series-public:  #3987e5;
-    --series-user:    #d95926;
-    --good:           #0ca30c;
-    --critical:       #d03b3b;
-    --shadow:         0 1px 2px rgba(0, 0, 0, 0.5), 0 8px 24px rgba(0, 0, 0, 0.4);
-
-    --rate-public-1: #20324a;
-    --rate-public-1-ink: #ffffff;
-    --rate-public-2: #274062;
-    --rate-public-2-ink: #ffffff;
-    --rate-public-3: #2d4e7a;
-    --rate-public-3-ink: #ffffff;
-    --rate-public-4: #335d93;
-    --rate-public-4-ink: #ffffff;
-    --rate-public-5: #396cae;
-    --rate-public-5-ink: #ffffff;
-    --rate-public-6: #3f7cc9;
-    --rate-public-6-ink: #0b0b0b;
-    --rate-public-7: #458be4;
-    --rate-public-7-ink: #0b0b0b;
-    --rate-public-8: #4e9cfe;
-    --rate-public-8-ink: #0b0b0b;
-    --rate-public-9: #70aefe;
-    --rate-public-9-ink: #0b0b0b;
-    --rate-public-10: #8ebfff;
-    --rate-public-10-ink: #0b0b0b;
-    --rate-user-1: #48281c;
-    --rate-user-1-ink: #ffffff;
-    --rate-user-2: #5e3121;
-    --rate-user-2-ink: #ffffff;
-    --rate-user-3: #763b25;
-    --rate-user-3-ink: #ffffff;
-    --rate-user-4: #8d4428;
-    --rate-user-4-ink: #ffffff;
-    --rate-user-5: #a64e2c;
-    --rate-user-5-ink: #ffffff;
-    --rate-user-6: #c0572f;
-    --rate-user-6-ink: #ffffff;
-    --rate-user-7: #da6132;
-    --rate-user-7-ink: #0b0b0b;
-    --rate-user-8: #f46b34;
-    --rate-user-8-ink: #0b0b0b;
-    --rate-user-9: #ff8355;
-    --rate-user-9-ink: #0b0b0b;
-    --rate-user-10: #ffa07e;
-    --rate-user-10-ink: #0b0b0b;
-  }
-}
-
-:root[data-theme='dark'] {
-  color-scheme: dark;
-  --page:           #0d0d0d;
-  --surface-1:      #1a1a19;
-  --surface-2:      #232322;
-  --text-primary:   #ffffff;
-  --text-secondary: #c3c2b7;
-  --text-muted:     #898781;
-  --grid:           #2c2c2a;
-  --axis:           #383835;
-  --border:         rgba(255, 255, 255, 0.10);
-  --band:           rgba(255, 255, 255, 0.035);
-  --series-public:  #3987e5;
-  --series-user:    #d95926;
-  --shadow:         0 1px 2px rgba(0, 0, 0, 0.5), 0 8px 24px rgba(0, 0, 0, 0.4);
-
-  --rate-public-1: #20324a;
-  --rate-public-1-ink: #ffffff;
-  --rate-public-2: #274062;
-  --rate-public-2-ink: #ffffff;
-  --rate-public-3: #2d4e7a;
-  --rate-public-3-ink: #ffffff;
-  --rate-public-4: #335d93;
-  --rate-public-4-ink: #ffffff;
-  --rate-public-5: #396cae;
-  --rate-public-5-ink: #ffffff;
-  --rate-public-6: #3f7cc9;
-  --rate-public-6-ink: #0b0b0b;
-  --rate-public-7: #458be4;
-  --rate-public-7-ink: #0b0b0b;
-  --rate-public-8: #4e9cfe;
-  --rate-public-8-ink: #0b0b0b;
-  --rate-public-9: #70aefe;
-  --rate-public-9-ink: #0b0b0b;
-  --rate-public-10: #8ebfff;
-  --rate-public-10-ink: #0b0b0b;
-  --rate-user-1: #48281c;
-  --rate-user-1-ink: #ffffff;
-  --rate-user-2: #5e3121;
-  --rate-user-2-ink: #ffffff;
-  --rate-user-3: #763b25;
-  --rate-user-3-ink: #ffffff;
-  --rate-user-4: #8d4428;
-  --rate-user-4-ink: #ffffff;
-  --rate-user-5: #a64e2c;
-  --rate-user-5-ink: #ffffff;
-  --rate-user-6: #c0572f;
-  --rate-user-6-ink: #ffffff;
-  --rate-user-7: #da6132;
-  --rate-user-7-ink: #0b0b0b;
-  --rate-user-8: #f46b34;
-  --rate-user-8-ink: #0b0b0b;
-  --rate-user-9: #ff8355;
-  --rate-user-9-ink: #0b0b0b;
-  --rate-user-10: #ffa07e;
-  --rate-user-10-ink: #0b0b0b;
+  --shadow: 0 1px 2px rgba(11, 11, 12, 0.06), 0 10px 28px rgba(11, 11, 12, 0.08);
 }
 
 * { box-sizing: border-box; }
@@ -216,100 +80,114 @@ body {
   font-size: 15px;
   line-height: 1.5;
   -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
 }
 
 a { color: inherit; text-decoration: none; }
-a:hover { text-decoration: underline; }
+a:hover { text-decoration: none; }
 
 img { max-width: 100%; display: block; }
 
-button {
-  font: inherit;
-  color: inherit;
-  cursor: pointer;
-  background: none;
-  border: none;
-}
-
+button { font: inherit; color: inherit; cursor: pointer; background: none; border: none; }
 input, textarea, select { font: inherit; color: inherit; }
 
 :focus-visible {
-  outline: 2px solid var(--series-public);
+  outline: 2px solid var(--accent);
   outline-offset: 2px;
-  border-radius: 4px;
+  border-radius: 6px;
 }
+
+::selection { background: color-mix(in srgb, var(--accent) 40%, transparent); }
 
 /* ------------------------------------------------------------ primitives */
 
+/*
+ * Longhands on purpose. Page classes are applied alongside this one
+ * (`class="container album-page"`) and set their own vertical padding with a
+ * shorthand; if this rule used `margin`/`padding` shorthands it would reset
+ * their top and bottom to zero whenever it won the cascade, silently flattening
+ * the spacing on every page.
+ */
 .container {
   width: 100%;
-  max-width: 1180px;
-  margin: 0 auto;
-  padding: 0 20px;
+  max-width: 1240px;
+  margin-left: auto;
+  margin-right: auto;
+  padding-left: 24px;
+  padding-right: 24px;
 }
 
 .card {
   background: var(--surface-1);
   border: 1px solid var(--border);
   border-radius: var(--radius);
-  box-shadow: var(--shadow);
 }
 
 .muted { color: var(--text-muted); }
 .secondary { color: var(--text-secondary); }
 
-.stack { display: flex; flex-direction: column; }
-.row { display: flex; align-items: center; }
+.section-title {
+  font-size: 11px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.09em;
+  color: var(--text-muted);
+  margin: 0 0 14px;
+}
 
 .btn {
   display: inline-flex;
   align-items: center;
-  gap: 6px;
-  padding: 8px 14px;
-  border-radius: var(--radius-s);
+  gap: 7px;
+  padding: 8px 15px;
+  border-radius: 999px;
   border: 1px solid var(--border);
-  background: var(--surface-1);
-  font-size: 14px;
+  background: var(--surface-2);
+  font-size: 13px;
   font-weight: 500;
-  transition: background 120ms ease, border-color 120ms ease;
+  transition: background 140ms ease, border-color 140ms ease, color 140ms ease;
 }
-.btn:hover { background: var(--surface-2); }
+.btn:hover { background: var(--surface-3); border-color: var(--border-strong); }
 .btn[aria-pressed='true'] {
   background: var(--text-primary);
   color: var(--page);
   border-color: var(--text-primary);
 }
-.btn:disabled { opacity: 0.5; cursor: not-allowed; }
+.btn:disabled { opacity: 0.45; cursor: not-allowed; }
 
 .btn-primary {
-  background: var(--series-public);
-  border-color: var(--series-public);
-  color: #fff;
+  background: var(--accent);
+  border-color: var(--accent);
+  color: #07131f;
+  font-weight: 600;
 }
-.btn-primary:hover { background: var(--series-public); filter: brightness(1.08); }
+.btn-primary:hover { filter: brightness(1.1); background: var(--accent); }
 
 .input {
   width: 100%;
-  padding: 10px 12px;
+  padding: 10px 14px;
   border-radius: var(--radius-s);
   border: 1px solid var(--border);
-  background: var(--surface-1);
+  background: var(--surface-2);
 }
 .input::placeholder { color: var(--text-muted); }
 
 .tag {
   display: inline-block;
-  padding: 2px 8px;
+  padding: 3px 10px;
   border-radius: 999px;
   background: var(--surface-2);
   color: var(--text-secondary);
-  font-size: 12px;
-  font-weight: 500;
-  letter-spacing: 0.01em;
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
 }
 
+.dot { width: 8px; height: 8px; border-radius: 50%; display: inline-block; flex: none; }
+
 .skeleton {
-  background: linear-gradient(90deg, var(--surface-2), var(--surface-1), var(--surface-2));
+  background: linear-gradient(90deg, var(--surface-1), var(--surface-2), var(--surface-1));
   background-size: 200% 100%;
   animation: shimmer 1.4s ease-in-out infinite;
   border-radius: var(--radius-s);
@@ -330,3 +208,14 @@ input, textarea, select { font: inherit; color: inherit; }
   overflow: hidden; clip: rect(0 0 0 0);
   white-space: nowrap; border: 0;
 }
+
+/* Horizontal rails: scroll inside themselves, never the page. */
+.rail {
+  display: flex;
+  gap: 16px;
+  overflow-x: auto;
+  scroll-snap-type: x proximity;
+  padding-bottom: 6px;
+  scrollbar-width: thin;
+}
+.rail > * { scroll-snap-align: start; flex: none; }

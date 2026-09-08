@@ -79,6 +79,13 @@ export async function searchAlbums(term: string, limit = 12): Promise<ItunesAlbu
   return data.results.filter((r) => r.wrapperType === 'collection');
 }
 
+/** Individual songs, so a single with no album of its own is still findable. */
+export async function searchSongs(term: string, limit = 16): Promise<ItunesTrack[]> {
+  const url = `${BASE}/search?term=${encodeURIComponent(term)}&entity=song&limit=${limit}`;
+  const data = await fetchJson<ItunesResponse<ItunesTrack>>(url, { upstream: 'itunes' });
+  return data.results.filter((r) => r.wrapperType === 'track' && r.kind === 'song');
+}
+
 /** Artist header plus every album iTunes knows about, newest first. */
 export async function lookupArtistDiscography(
   artistId: number,
@@ -90,6 +97,13 @@ export async function lookupArtistDiscography(
   const artist = (data.results.find((r) => r.wrapperType === 'artist') as ItunesArtist) ?? null;
   const albums = data.results.filter((r): r is ItunesAlbum => r.wrapperType === 'collection');
   return { artist, albums };
+}
+
+/** A single song by its track id, for resolving a search hit to its album. */
+export async function lookupTrack(trackId: number): Promise<ItunesTrack | null> {
+  const url = `${BASE}/lookup?id=${trackId}&entity=song&limit=1`;
+  const data = await fetchJson<ItunesResponse<ItunesTrack>>(url, { upstream: 'itunes' });
+  return data.results.find((r) => r.wrapperType === 'track') ?? null;
 }
 
 /** Album header plus its full, ordered track listing. */

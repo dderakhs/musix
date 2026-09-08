@@ -7,7 +7,8 @@ import type { Album, ArtistResponse, Track } from '../lib/types';
 import { formatScore, formatYear } from '../lib/format';
 import { useRatingSurface } from '../lib/useRatingSurface';
 import ScoreGraph, { type GraphGroup, type SeriesKey } from '../components/ScoreGraph';
-import RatingGrid, { type Metric } from '../components/RatingGrid';
+import { useScoreMode } from '../lib/scoreMode';
+import RatingGrid from '../components/RatingGrid';
 import TrackTable from '../components/TrackTable';
 import TrackDetail from '../components/TrackDetail';
 import './ArtistPage.css';
@@ -38,12 +39,17 @@ export default function ArtistPage({ onRequestSignIn }: Props) {
   const [hydrating, setHydrating] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [types, setTypes] = useState<Set<string>>(new Set(['album']));
+  const { mode } = useScoreMode();
   const [visible, setVisible] = useState<Record<SeriesKey, boolean>>({
     publicScore: true,
-    userScore: true,
+    userScore: false,
   });
+
+  // The graph leads with whichever score the site is set to.
+  useEffect(() => {
+    setVisible({ publicScore: mode === 'public', userScore: mode !== 'public' });
+  }, [mode]);
   const [selectedTrackId, setSelectedTrackId] = useState<string | null>(null);
-  const [metric, setMetric] = useState<Metric>('public');
 
   // Albums we have already asked for, so the hydration effect never loops.
   const attempted = useRef<Set<string>>(new Set());
@@ -236,6 +242,15 @@ export default function ArtistPage({ onRequestSignIn }: Props) {
         ))}
       </div>
 
+      <section className="artist-gridblock">
+        <RatingGrid
+          groups={groups}
+          myRatings={myRatings}
+          selectedTrackId={selectedTrackId}
+          onSelectTrack={(track) => setSelectedTrackId(track.id)}
+        />
+      </section>
+
       <section className="card artist-graph-card">
         <ScoreGraph
           groups={groups}
@@ -251,22 +266,9 @@ export default function ArtistPage({ onRequestSignIn }: Props) {
         />
       </section>
 
-      <section className="card artist-grid-card">
-        <h2 className="artist-section-title">Every track, by score</h2>
-        <RatingGrid
-          groups={groups}
-          metric={metric}
-          onChangeMetric={setMetric}
-          myRatings={myRatings}
-          selectedTrackId={selectedTrackId}
-          onSelectTrack={(track) => setSelectedTrackId(track.id)}
-          canRate={canRate}
-        />
-      </section>
-
       <div className="artist-body">
         <section className="artist-tracks">
-          <h2 className="artist-section-title">All tracks</h2>
+          <h2 className="section-title">All tracks</h2>
           <TrackTable
             tracks={flatTracks}
             albumLabels={albumLabels}
@@ -299,7 +301,7 @@ export default function ArtistPage({ onRequestSignIn }: Props) {
           )}
 
           <section className="card artist-albums">
-            <h2 className="artist-section-title">Releases</h2>
+            <h2 className="section-title">Releases</h2>
             <ul className="artist-album-list">
               {selectedAlbums.map((album) => (
                 <li key={albumKey(album)}>

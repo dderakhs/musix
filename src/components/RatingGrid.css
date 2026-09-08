@@ -1,47 +1,32 @@
 .rgrid { margin: 0; }
 
-.rgrid-head {
+.tier-legend {
   display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 16px;
   flex-wrap: wrap;
-  margin-bottom: 14px;
+  gap: 8px 18px;
+  margin-bottom: 16px;
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--text-secondary);
 }
 
-.rgrid-metrics { display: flex; gap: 6px; }
-.rgrid-metric { padding: 5px 12px; font-size: 13px; }
-
-.rgrid-legend {
-  display: flex;
-  align-items: center;
-  gap: 7px;
-  font-size: 11px;
-}
-
-.rgrid-legend-cap { font-variant-numeric: tabular-nums; }
-
-.rgrid-legend-swatches {
-  display: flex;
-  /* 2px surface gaps separate the steps rather than borders. */
-  gap: 2px;
-}
-.rgrid-legend-swatches span {
-  width: 15px;
-  height: 11px;
-  border-radius: 2px;
-}
+.tier-legend-item { display: inline-flex; align-items: center; gap: 7px; }
 
 /* Wide grids scroll inside their own container; the page never scrolls sideways. */
-.rgrid-scroll {
-  overflow-x: auto;
-  padding-bottom: 4px;
-}
+.rgrid-scroll { overflow-x: auto; padding-bottom: 4px; }
 
 .rgrid-matrix {
   display: grid;
-  gap: 2px;
+  gap: 3px;
   min-width: min-content;
+}
+
+/* Each row spans the full column set so cells line up under their album. */
+.rgrid-rowgroup {
+  display: grid;
+  grid-template-columns: subgrid;
+  grid-column: 1 / -1;
+  gap: 3px;
 }
 
 .rgrid-corner { min-height: 1px; }
@@ -50,7 +35,7 @@
   display: flex;
   flex-direction: column;
   justify-content: flex-end;
-  padding: 0 2px 6px;
+  padding: 0 2px 8px;
   min-width: 0;
   text-align: center;
 }
@@ -60,7 +45,6 @@
   font-weight: 600;
   line-height: 1.25;
   overflow: hidden;
-  text-overflow: ellipsis;
   display: -webkit-box;
   -webkit-line-clamp: 2;
   line-clamp: 2;
@@ -73,7 +57,7 @@
   display: flex;
   align-items: center;
   justify-content: flex-end;
-  padding-right: 7px;
+  padding-right: 8px;
   font-size: 11px;
   font-variant-numeric: tabular-nums;
 }
@@ -84,54 +68,50 @@
   align-items: center;
   justify-content: center;
   gap: 1px;
-  /* Comfortably past the 24px minimum hit target. */
-  min-height: 32px;
-  padding: 4px 2px;
-  border-radius: 4px;
+  min-height: 34px;
+  padding: 5px 2px;
+  border-radius: 7px;
   background: var(--surface-2);
   color: var(--text-muted);
-  font-size: 12px;
-  font-weight: 650;
+  font-size: 12.5px;
+  font-weight: 700;
   font-variant-numeric: tabular-nums;
-  transition: transform 90ms ease, outline-color 90ms ease;
+  transition: transform 100ms ease, box-shadow 100ms ease;
   outline: 2px solid transparent;
-  outline-offset: 1px;
+  outline-offset: 2px;
 }
 
 .rgrid-cell[data-rated='false'] {
-  /* An unrated track reads as empty, never as a low score. */
   background: transparent;
-  border: 1px dashed var(--border);
+  border: 1px dashed var(--border-strong);
+  font-weight: 500;
 }
 
-.rgrid-cell:hover { transform: scale(1.06); }
+.rgrid-cell:hover {
+  transform: scale(1.09);
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.45);
+  z-index: 2;
+}
 .rgrid-cell[data-selected='true'] { outline-color: var(--text-primary); }
 
- /* Past the end of a shorter album: no track exists here at all, so the cell
-    stays empty rather than reading as data. */
-.rgrid-cell-absent {
-  min-height: 32px;
-  background: transparent;
-}
+.rgrid-cell-absent { min-height: 34px; }
 
-.rgrid-cell-num {
-  font-size: 9px;
-  font-weight: 600;
-  opacity: 0.72;
-  line-height: 1;
-}
-
+.rgrid-cell-num { font-size: 9px; font-weight: 600; opacity: 0.66; line-height: 1; }
 .rgrid-cell-value { line-height: 1.1; }
 
-/* Single-album view: tracks flow across instead of stacking in one column. */
+/* Single album (or a lone single): tracks flow across instead of stacking. */
 .rgrid-flow {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(58px, 1fr));
-  gap: 2px;
+  grid-template-columns: repeat(auto-fill, minmax(62px, 1fr));
+  gap: 3px;
 }
-.rgrid-flow .rgrid-cell { min-height: 48px; font-size: 14px; }
+.rgrid-flow .rgrid-cell { min-height: 54px; font-size: 15px; }
+
+/* A single with no siblings gets one big statement cell. */
+.rgrid-flow:has(> :only-child) { grid-template-columns: minmax(120px, 190px); }
+.rgrid-flow:has(> :only-child) .rgrid-cell { min-height: 120px; font-size: 34px; border-radius: var(--radius); }
+.rgrid-flow:has(> :only-child) .rgrid-cell-num { font-size: 12px; }
 
 @media (max-width: 640px) {
-  .rgrid-head { gap: 10px; }
-  .rgrid-flow { grid-template-columns: repeat(auto-fill, minmax(50px, 1fr)); }
+  .rgrid-flow { grid-template-columns: repeat(auto-fill, minmax(52px, 1fr)); }
 }

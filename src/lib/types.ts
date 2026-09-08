@@ -18,6 +18,46 @@ export interface SearchArtist {
   itunesArtistId: number;
   name: string;
   genre: string | null;
+  imageUrl: string | null;
+  fans: number;
+}
+
+export interface SearchSong {
+  itunesTrackId: number;
+  itunesCollectionId: number;
+  title: string;
+  artistName: string;
+  coverUrl: string | null;
+  durationMs: number | null;
+}
+
+export interface ChartEntry {
+  rank: number;
+  itunesTrackId: number | null;
+  title: string;
+  artistName: string;
+  artworkUrl: string | null;
+  releaseDate: string | null;
+}
+
+/** Factual song metadata for the hover preview: artwork and credits only. */
+export interface TrackPreview {
+  artUrl: string | null;
+  releaseDate: string | null;
+  producers: string[];
+  writers: string[];
+  geniusUrl: string | null;
+}
+
+export interface Comment {
+  id: string;
+  albumId: string;
+  userId: string;
+  parentId: string | null;
+  body: string;
+  createdAt: string;
+  authorName: string;
+  authorAvatar: string | null;
 }
 
 export interface SearchAlbum {
@@ -36,6 +76,7 @@ export interface SearchResponse {
   query: string;
   artists: SearchArtist[];
   albums: SearchAlbum[];
+  songs: SearchSong[];
 }
 
 export interface Track {
@@ -53,6 +94,7 @@ export interface Track {
   publicScoreSources: PublicScoreBreakdown | null;
   userScore: number | null;
   userRatingCount: number;
+  preview?: TrackPreview | null;
 }
 
 export interface Album {

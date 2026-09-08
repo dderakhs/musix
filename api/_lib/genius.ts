@@ -29,12 +29,33 @@ interface GeniusSearch {
 }
 
 interface GeniusSong {
-  response?: { song?: { stats?: { pageviews?: number } } };
+  response?: {
+    song?: {
+      stats?: { pageviews?: number };
+      song_art_image_url?: string;
+      header_image_thumbnail_url?: string;
+      release_date_for_display?: string;
+      url?: string;
+      producer_artists?: Array<{ name?: string }>;
+      writer_artists?: Array<{ name?: string }>;
+      album?: { name?: string };
+    };
+  };
 }
 
 export interface GeniusTrackStats {
   songId: number;
   pageviews: number | null;
+  /**
+   * Artwork specific to this song where one exists — a single's own cover or a
+   * video still — which is what makes a hover preview feel like the track rather
+   * than the record it sits on. Callers fall back to the album cover.
+   */
+  artUrl: string | null;
+  releaseDate: string | null;
+  producers: string[];
+  writers: string[];
+  geniusUrl: string | null;
 }
 
 export function geniusEnabled(): boolean {
@@ -85,10 +106,22 @@ export async function fetchTrackStats(
     `${BASE}/songs/${songId}?text_format=plain`,
     { upstream: 'genius', headers },
   );
-  const pageviews = song?.response?.song?.stats?.pageviews;
+  const detail = song?.response?.song;
+  const pageviews = detail?.stats?.pageviews;
+
+  // Deliberately only factual credits and artwork. Lyrics are licensed, and the
+  // prose annotations on a Genius page are their contributors' work — neither
+  // belongs in a hover card here.
+  const names = (list: Array<{ name?: string }> | undefined) =>
+    (list ?? []).map((a) => a.name).filter((n): n is string => Boolean(n)).slice(0, 4);
 
   return {
     songId,
     pageviews: typeof pageviews === 'number' && pageviews > 0 ? pageviews : null,
+    artUrl: detail?.song_art_image_url ?? detail?.header_image_thumbnail_url ?? null,
+    releaseDate: detail?.release_date_for_display ?? null,
+    producers: names(detail?.producer_artists),
+    writers: names(detail?.writer_artists),
+    geniusUrl: detail?.url ?? null,
   };
 }

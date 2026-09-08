@@ -1,83 +1,173 @@
-.home { padding: 56px 20px 80px; }
+.home { padding-bottom: 90px; }
 
-.home-hero { max-width: 720px; }
+.home-hero { padding: 88px 24px 20px; text-align: center; }
 
 .home-title {
-  margin: 0 0 16px;
-  font-size: clamp(32px, 5.5vw, 52px);
-  line-height: 1.08;
-  letter-spacing: -0.03em;
+  margin: 0 auto 18px;
+  max-width: 15ch;
+  font-size: clamp(38px, 6.5vw, 68px);
+  line-height: 1.03;
+  letter-spacing: -0.04em;
   font-weight: 700;
 }
 
 .home-title-accent {
-  /* A large word is not a data mark; it takes ink, not a series colour. */
-  border-bottom: 5px solid var(--series-user);
-  padding-bottom: 1px;
+  /* Interpolated in oklab: a straight sRGB blue-to-orange ramp passes through a
+     desaturated grey in the middle, which washes the centre letters out. */
+  background: linear-gradient(96deg, var(--series-public), var(--series-user));
+  background: linear-gradient(96deg in oklab, var(--series-public), var(--series-user));
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
 }
 
 .home-lede {
-  margin: 0 0 26px;
+  margin: 0 auto 34px;
+  max-width: 56ch;
   font-size: 17px;
   line-height: 1.55;
   color: var(--text-secondary);
 }
 
+.home-search { max-width: 620px; margin: 0 auto 20px; }
+
 .home-examples {
   display: flex;
   align-items: center;
+  justify-content: center;
   gap: 8px;
   flex-wrap: wrap;
 }
 
 .home-examples-label {
-  font-size: 12px;
-  text-transform: uppercase;
-  letter-spacing: 0.07em;
-  margin-right: 2px;
-}
-
-.home-example { transition: background 120ms ease; }
-.home-example:hover { background: var(--text-primary); color: var(--page); text-decoration: none; }
-
-.home-scores {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
-  gap: 16px;
-  margin-top: 56px;
-}
-
-.home-score-card { padding: 22px; }
-
-.home-score-head {
-  display: flex;
-  align-items: center;
-  gap: 9px;
-  margin-bottom: 12px;
-}
-.home-score-head h2 { margin: 0; font-size: 16px; font-weight: 650; }
-
-.home-score-card p { margin: 0 0 10px; font-size: 14px; line-height: 1.55; }
-.home-score-note { font-size: 13px; }
-
-.home-sources { margin-top: 56px; }
-
-.home-sources-title {
   font-size: 11px;
-  font-weight: 600;
   text-transform: uppercase;
-  letter-spacing: 0.07em;
-  color: var(--text-muted);
-  margin: 0 0 14px;
+  letter-spacing: 0.08em;
 }
 
-.home-sources-list {
-  list-style: none;
+.home-example { transition: background 140ms ease, color 140ms ease; }
+.home-example:hover { background: var(--text-primary); color: var(--page); }
+
+.home-section { margin-top: 72px; }
+
+.home-sectionhead { margin-bottom: 18px; }
+
+.home-sectiontitle {
   margin: 0;
-  padding: 0;
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
-  gap: 8px 24px;
+  font-size: 21px;
+  font-weight: 660;
+  letter-spacing: -0.02em;
+}
+.home-sectionsub { margin: 3px 0 0; font-size: 13px; }
+
+/* ------------------------------------------------------------- chart rail */
+
+.chartcard { width: 168px; }
+.chartcard:hover .chartcard-art img { transform: scale(1.05); }
+
+.chartcard-art {
+  position: relative;
+  display: block;
+  aspect-ratio: 1;
+  border-radius: var(--radius-s);
+  overflow: hidden;
+  background: var(--surface-2);
+  border: 1px solid var(--border);
+  margin-bottom: 10px;
+}
+.chartcard-art img {
+  width: 100%; height: 100%;
+  object-fit: cover;
+  transition: transform 260ms ease;
+}
+
+.chartcard-rank {
+  position: absolute;
+  left: 8px;
+  bottom: 8px;
+  min-width: 26px;
+  padding: 2px 7px;
+  border-radius: 999px;
+  background: rgba(0, 0, 0, 0.72);
+  backdrop-filter: blur(4px);
+  color: #fff;
+  font-size: 12px;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+  text-align: center;
+}
+
+.chartcard-title {
+  display: block;
   font-size: 14px;
+  font-weight: 560;
+  line-height: 1.3;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.chartcard-artist {
+  display: block;
+  font-size: 12px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.home-chartskel { width: 168px; aspect-ratio: 0.82; }
+
+/* ----------------------------------------------------------------- about */
+
+.home-aboutgrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+  gap: 20px 44px;
+}
+
+.home-aboutcol p {
+  margin: 0 0 14px;
+  font-size: 14.5px;
+  line-height: 1.65;
   color: var(--text-secondary);
+}
+.home-aboutcol strong { color: var(--text-primary); font-weight: 620; }
+
+.home-abouth3 {
+  margin: 0 0 10px;
+  font-size: 13px;
+  font-weight: 650;
+  color: var(--text-primary);
+}
+
+.home-aboutnote { font-size: 13px !important; }
+
+.home-tiers { margin-top: 34px; }
+
+.home-tierrow {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px 20px;
+}
+
+.home-tier {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 13px;
+  font-weight: 550;
+  color: var(--text-secondary);
+}
+
+.home-tierchip {
+  min-width: 34px;
+  padding: 3px 8px;
+  border-radius: 6px;
+  font-size: 11px;
+  font-weight: 750;
+  text-align: center;
+  font-variant-numeric: tabular-nums;
+}
+
+@media (max-width: 640px) {
+  .home-hero { padding-top: 56px; }
 }

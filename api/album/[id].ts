@@ -46,6 +46,17 @@ interface OutTrack {
   publicScoreSources: PublicScore;
   userScore: number | null;
   userRatingCount: number;
+  /** Genius artwork and credits, for the hover preview. Null without a token. */
+  preview: TrackPreview | null;
+}
+
+/** Factual song metadata only — never lyrics or Genius's annotation prose. */
+export interface TrackPreview {
+  artUrl: string | null;
+  releaseDate: string | null;
+  producers: string[];
+  writers: string[];
+  geniusUrl: string | null;
 }
 
 /** Resolve a musix uuid to the iTunes id we actually fetch with. */
@@ -164,7 +175,20 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     });
 
     const albumScore = computePublicScore({ releaseGroupRating });
-    const out = await persist({ album, mb, scored, albumScore });
+    // Genius artwork/credits are presentation-only, so they ride the response
+    // rather than the catalogue tables.
+    const previews = new Map<number, TrackPreview>();
+    for (const [track, stats] of genius) {
+      previews.set(track.trackId, {
+        artUrl: stats.artUrl,
+        releaseDate: stats.releaseDate,
+        producers: stats.producers,
+        writers: stats.writers,
+        geniusUrl: stats.geniusUrl,
+      });
+    }
+
+    const out = await persist({ album, mb, scored, albumScore, previews });
 
     sendJson(
       res,
@@ -214,8 +238,9 @@ async function persist(args: {
   mb: MbTrackRatings | null;
   scored: Array<{ track: ItunesTrack; score: PublicScore }>;
   albumScore: PublicScore;
+  previews: Map<number, TrackPreview>;
 }): Promise<{ albumId: string | null; artistId: string | null; tracks: OutTrack[] }> {
-  const { album, mb, scored, albumScore } = args;
+  const { album, mb, scored, albumScore, previews } = args;
 
   const bare = (): OutTrack[] =>
     scored.map(({ track, score }) => ({
@@ -231,6 +256,7 @@ async function persist(args: {
       publicScoreSources: score,
       userScore: null,
       userRatingCount: 0,
+      preview: previews.get(track.trackId) ?? null,
     }));
 
   const db = serviceClient();
@@ -339,6 +365,7 @@ async function persist(args: {
       publicScoreSources: r.public_score_sources as PublicScore,
       userScore: r.user_score === null ? null : Number(r.user_score),
       userRatingCount: Number(r.user_rating_count ?? 0),
+      preview: previews.get(Number(r.itunes_track_id)) ?? null,
     }))
     .sort((a, b) => a.discNumber - b.discNumber || a.trackNumber - b.trackNumber);
 
