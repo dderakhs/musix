@@ -1,0 +1,41 @@
+.railblock { margin-top: 64px; }
+
+.railblock-head {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 16px;
+  margin-bottom: 16px;
+}
+
+.railblock-title {
+  margin: 0;
+  font-size: 21px;
+  font-weight: 660;
+  letter-spacing: -0.02em;
+}
+.railblock-sub { margin: 3px 0 0; font-size: 13px; }
+
+.railblock-controls { display: flex; align-items: center; gap: 8px; flex: none; }
+
+.railbtn {
+  width: 34px;
+  height: 34px;
+  border-radius: 50%;
+  border: 1px solid var(--border);
+  background: var(--surface-2);
+  color: var(--text-secondary);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  transition: background 140ms ease, color 140ms ease, opacity 140ms ease;
+}
+.railbtn:hover:not(:disabled) {
+  background: var(--surface-3);
+  color: var(--text-primary);
+  border-color: var(--border-strong);
+}
+.railbtn:disabled { opacity: 0.3; cursor: default; }
+
+.chev { width: 15px; height: 15px; }
+.chev-left { transform: rotate(180deg); }

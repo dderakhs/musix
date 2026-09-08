@@ -18,7 +18,12 @@ import {
 } from '../_lib/itunes.js';
 import { cacheHeaders, normaliseTitle } from '../_lib/http.js';
 import { fetchAlbumRatings, findReleaseGroup, type MbTrackRatings } from '../_lib/musicbrainz.js';
-import { fetchAlbumPopularity, findAlbum, type DeezerAlbumData } from '../_lib/deezer.js';
+import {
+  fetchAlbumPopularity,
+  findAlbum,
+  searchTrackRank,
+  type DeezerAlbumData,
+} from '../_lib/deezer.js';
 import { fetchAlbumListeners, type LastfmAlbumData } from '../_lib/lastfm.js';
 import { fetchTrackStats, geniusEnabled, type GeniusTrackStats } from '../_lib/genius.js';
 import { fetchTrackBuzz, redditEnabled, type RedditTrackBuzz } from '../_lib/reddit.js';
@@ -96,6 +101,28 @@ async function enrichDeezer(artist: string, album: string): Promise<DeezerAlbumD
  * the whole tracklist. Both are optional: without their tokens the maps come
  * back empty and the score is built from whatever else answered.
  */
+/**
+ * Ranks for tracks the album-level Deezer lookup did not cover. Without this a
+ * failed album match means every track on the record scores nothing at all,
+ * which is what "not rated yet" was really reporting.
+ */
+async function backfillDeezerRanks(
+  artist: string,
+  tracks: ItunesTrack[],
+  have: DeezerAlbumData | null,
+  deadline: number,
+): Promise<Map<number, number>> {
+  const missing = tracks.filter(
+    (t) => !have || have.rankByTitle.get(normaliseTitle(t.trackName)) == null,
+  );
+  if (missing.length === 0) return new Map();
+
+  const found = await mapPool(missing, TRACK_FANOUT, deadline, (track) =>
+    searchTrackRank(artist, track.trackName),
+  );
+  return new Map([...found].map(([track, rank]) => [track.trackId, rank]));
+}
+
 async function enrichGenius(
   artist: string,
   tracks: ItunesTrack[],
@@ -155,6 +182,13 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       ),
     ]);
 
+    const deezerBackfill = await backfillDeezerRanks(
+      album.artistName,
+      tracks,
+      deezer,
+      deadline + 4000,
+    ).catch(() => new Map<number, number>());
+
     const releaseGroupRating =
       mb?.releaseGroupRating && mb.releaseGroupRating.value != null
         ? { value: mb.releaseGroupRating.value, votes: mb.releaseGroupRating['votes-count'] }
@@ -167,7 +201,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         recordingRating: rec?.value != null ? { value: rec.value, votes: rec['votes-count'] } : null,
         releaseGroupRating,
         geniusPageviews: genius.get(t)?.pageviews ?? null,
-        deezerRank: deezer?.rankByTitle.get(key) ?? null,
+        deezerRank: deezer?.rankByTitle.get(key) ?? deezerBackfill.get(t.trackId) ?? null,
         lastfmPlays: lastfm?.listenersByTitle.get(key) ?? null,
         reddit: reddit.get(t) ?? null,
       });

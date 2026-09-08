@@ -1,0 +1,27 @@
+.charts-page { padding: 34px 24px 100px; }
+
+.charts-head {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 18px;
+  flex-wrap: wrap;
+  margin-bottom: 28px;
+}
+
+.charts-title {
+  margin: 0;
+  font-size: clamp(26px, 3.6vw, 36px);
+  font-weight: 700;
+  letter-spacing: -0.03em;
+}
+.charts-sub { margin: 4px 0 0; font-size: 13.5px; }
+
+.charts-tabs { display: flex; gap: 8px; }
+
+.charts-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
+  gap: 28px 20px;
+}
+.charts-grid .chartcard { width: auto; }

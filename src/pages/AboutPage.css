@@ -1,0 +1,59 @@
+.about-page { padding: 56px 24px 100px; max-width: 780px; }
+
+.about-title {
+  margin: 0 0 16px;
+  font-size: clamp(30px, 4.5vw, 44px);
+  font-weight: 700;
+  letter-spacing: -0.035em;
+}
+
+.about-lede {
+  margin: 0 0 40px;
+  font-size: 17px;
+  line-height: 1.6;
+  color: var(--text-secondary);
+}
+
+.about-section { margin-bottom: 40px; }
+
+.about-h2 {
+  margin: 0 0 12px;
+  font-size: 17px;
+  font-weight: 660;
+  letter-spacing: -0.01em;
+}
+
+.about-section p {
+  margin: 0 0 14px;
+  font-size: 14.5px;
+  line-height: 1.7;
+  color: var(--text-secondary);
+}
+.about-section strong { color: var(--text-primary); font-weight: 620; }
+
+.about-list {
+  margin: 0 0 16px;
+  padding-left: 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 7px;
+  font-size: 14.5px;
+  line-height: 1.6;
+  color: var(--text-secondary);
+}
+
+.about-tiers { display: flex; flex-direction: column; gap: 8px; }
+
+.about-tier { display: flex; align-items: center; gap: 12px; }
+
+.about-tierchip {
+  min-width: 46px;
+  padding: 5px 10px;
+  border-radius: 7px;
+  font-size: 12px;
+  font-weight: 750;
+  text-align: center;
+  font-variant-numeric: tabular-nums;
+}
+
+.about-tiername { font-size: 14px; font-weight: 560; }

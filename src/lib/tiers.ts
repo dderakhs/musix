@@ -29,7 +29,7 @@ export const TIERS: Tier[] = [
   { id: 'decent',  label: 'Decent',          min: 6.0, colour: '#e0c02b', ink: '#0b0b0b' },
   { id: 'mid',     label: 'Mid',             min: 5.0, colour: '#ef8f2e', ink: '#0b0b0b' },
   { id: 'skip',    label: 'Skip',            min: 3.0, colour: '#e04b46', ink: '#0b0b0b' },
-  { id: 'garbage', label: 'Hot Garbage',     min: 0,   colour: '#8b5cc4', ink: '#ffffff' },
+  { id: 'garbage', label: 'Hot Garbage',     min: 0,   colour: '#a1734c', ink: '#0b0b0b' },
 ];
 
 /** The band a score falls in, or null when a track has no score at all. */

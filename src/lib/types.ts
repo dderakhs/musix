@@ -34,6 +34,7 @@ export interface SearchSong {
 export interface ChartEntry {
   rank: number;
   itunesTrackId: number | null;
+  itunesCollectionId: number | null;
   title: string;
   artistName: string;
   artworkUrl: string | null;

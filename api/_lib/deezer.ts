@@ -77,6 +77,34 @@ export async function findAlbum(artist: string, album: string): Promise<number |
   return (exact ?? hits[0]).id;
 }
 
+interface DeezerSearchTracks {
+  data?: Array<{ id: number; title: string; rank?: number; artist?: { name: string } }>;
+}
+
+/**
+ * Popularity for one track, by name.
+ *
+ * The album-level lookup misses more often than you would think — deluxe
+ * editions, regional retitling, punctuation, or simply no Deezer release — and
+ * when it missed the track was left with no popularity signal at all and
+ * therefore no score. This is the per-track fallback for exactly that case.
+ */
+export async function searchTrackRank(
+  artist: string,
+  title: string,
+): Promise<number | null> {
+  const q = `artist:"${artist.replace(/"/g, '')}" track:"${title.replace(/"/g, '')}"`;
+  const url = `${BASE}/search/track?q=${encodeURIComponent(q)}&limit=5`;
+  const data = await fetchJsonOrNull<DeezerSearchTracks>(url, { upstream: 'deezer' });
+  const hits = data?.data ?? [];
+  if (hits.length === 0) return null;
+
+  const wanted = normaliseTitle(title);
+  const exact = hits.find((t) => normaliseTitle(t.title) === wanted);
+  const rank = (exact ?? hits[0]).rank;
+  return typeof rank === 'number' && rank > 0 ? rank : null;
+}
+
 export async function fetchAlbumPopularity(albumId: number): Promise<DeezerAlbumData | null> {
   const [album, tracks] = await Promise.all([
     fetchJsonOrNull<DeezerAlbum>(`${BASE}/album/${albumId}`, { upstream: 'deezer' }),

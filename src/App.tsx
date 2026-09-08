@@ -5,6 +5,8 @@ import AuthDialog from './components/AuthDialog';
 import HomePage from './pages/HomePage';
 import SearchPage from './pages/SearchPage';
 import TrackPage from './pages/TrackPage';
+import AboutPage from './pages/AboutPage';
+import ChartsPage from './pages/ChartsPage';
 import { supabaseConfigError, supabaseConfigured } from './lib/supabase';
 import './App.css';
 
@@ -32,6 +34,8 @@ export default function App() {
           <Routes>
             <Route path="/" element={<HomePage />} />
             <Route path="/search" element={<SearchPage />} />
+            <Route path="/charts" element={<ChartsPage />} />
+            <Route path="/about" element={<AboutPage />} />
             <Route path="/artist/:id" element={<ArtistPage onRequestSignIn={openAuth} />} />
             <Route path="/album/:id" element={<AlbumPage onRequestSignIn={openAuth} />} />
             <Route path="/track/:id" element={<TrackPage />} />
@@ -46,7 +50,8 @@ export default function App() {
             musix — public reception and member ratings, track by track.
           </span>
           <span className="app-footer-links">
-            <Link to="/#about">About</Link>
+            <Link to="/charts">Charts</Link>
+            <Link to="/about">About</Link>
             <a href="https://github.com/dderakhs/musix">Source</a>
           </span>
         </div>

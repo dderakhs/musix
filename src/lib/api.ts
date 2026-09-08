@@ -64,8 +64,8 @@ export const fetchArtist = (id: string | number, signal?: AbortSignal) =>
 export const fetchAlbum = (id: string | number, signal?: AbortSignal) =>
   get<AlbumResponse>(`/api/album/${encodeURIComponent(String(id))}`, signal);
 
-export const fetchCharts = (signal?: AbortSignal) =>
-  get<{ songs: ChartEntry[] }>('/api/charts', signal);
+export const fetchCharts = (limit = 100, signal?: AbortSignal) =>
+  get<{ songs: ChartEntry[]; albums: ChartEntry[] }>(`/api/charts?limit=${limit}`, signal);
 
 /** Resolve a song to the album page that can render it. */
 export const fetchTrack = (id: string | number, signal?: AbortSignal) =>

@@ -9,8 +9,8 @@
  */
 import { fetchJson } from './http.js';
 
-const FEED = (storefront: string, limit: number) =>
-  `https://rss.applemarketingtools.com/api/v2/${storefront}/music/most-played/${limit}/songs.json`;
+const FEED = (storefront: string, limit: number, kind: 'songs' | 'albums') =>
+  `https://rss.applemarketingtools.com/api/v2/${storefront}/music/most-played/${limit}/${kind}.json`;
 
 interface AppleFeed {
   feed?: {
@@ -28,7 +28,9 @@ interface AppleFeed {
 
 export interface ChartEntry {
   rank: number;
+  /** Track id for a song chart, collection id for an album chart. */
   itunesTrackId: number | null;
+  itunesCollectionId: number | null;
   title: string;
   artistName: string;
   artworkUrl: string | null;
@@ -36,16 +38,32 @@ export interface ChartEntry {
 }
 
 export async function fetchTopSongs(limit = 100, storefront = 'us'): Promise<ChartEntry[]> {
-  const data = await fetchJson<AppleFeed>(FEED(storefront, limit), { upstream: 'apple-charts' });
+  return fetchChart('songs', limit, storefront);
+}
+
+export async function fetchTopAlbums(limit = 100, storefront = 'us'): Promise<ChartEntry[]> {
+  return fetchChart('albums', limit, storefront);
+}
+
+async function fetchChart(
+  kind: 'songs' | 'albums',
+  limit: number,
+  storefront: string,
+): Promise<ChartEntry[]> {
+  const data = await fetchJson<AppleFeed>(FEED(storefront, limit, kind), {
+    upstream: 'apple-charts',
+  });
   const results = data.feed?.results ?? [];
 
   return results.flatMap((entry, index) => {
     if (!entry.name || !entry.artistName) return [];
     const id = Number(entry.id);
+    const numeric = Number.isFinite(id) ? id : null;
     return [
       {
         rank: index + 1,
-        itunesTrackId: Number.isFinite(id) ? id : null,
+        itunesTrackId: kind === 'songs' ? numeric : null,
+        itunesCollectionId: kind === 'albums' ? numeric : null,
         title: entry.name,
         artistName: entry.artistName,
         // The feed ships 100px art; ask for something retina-sized.

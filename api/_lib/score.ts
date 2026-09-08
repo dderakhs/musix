@@ -49,11 +49,14 @@ export const TUNING = {
     redditPosts: 1.0,
   },
   curves: {
-    // Deezer ranks bunch up between 10^5 and 10^6, so the curve has to do its
-    // work inside that band or every popular track flattens together at the top.
-    deezerRank: { midpoint: 4.6, steepness: 2.2 },
-    lastfmPlays: { midpoint: 4.6, steepness: 1.3 },
-    geniusPageviews: { midpoint: 4.8, steepness: 1.6 },
+    // Deezer is the odd one out: `rank` is already a bounded 0-1,000,000
+    // popularity index, not an unbounded count, so it gets a power curve over
+    // the fraction of that range rather than a logistic over its magnitude. A
+    // log curve compresses 300k and 950k into half a decade and scores both as
+    // hits, which is exactly the over-reading this replaces.
+    deezerRank: { exponent: 0.55 },
+    lastfmPlays: { midpoint: 4.6, steepness: 1.5 },
+    geniusPageviews: { midpoint: 5.2, steepness: 2.0 },
     // Post counts are small numbers; ten posts is already real discussion.
     redditPosts: { midpoint: 0.85, steepness: 1.9 },
   },
@@ -71,8 +74,24 @@ export const TUNING = {
    * failure this is here to prevent. The least-underestimating source is the
    * most informative one, so the blend leans its way.
    */
-  popularityExponent: 2,
+  popularityExponent: 3,
+  /**
+   * Additive bonus for a sales certification, applied after the blend.
+   *
+   * A certification is the one piece of hard, audited evidence of scale in the
+   * whole model — it is not a proxy for reach, it is a measured floor on it. A
+   * diamond record is a different order of thing from a merely popular one and
+   * the number should say so, which averaging alone will not do.
+   */
+  certificationPull: {
+    diamond: 0.35,
+    multi_platinum: 0.22,
+    platinum: 0.12,
+    gold: 0.05,
+  },
 } as const;
+
+export type Certification = keyof typeof TUNING.certificationPull;
 
 export interface ScoreSignal {
   source:
@@ -81,7 +100,8 @@ export interface ScoreSignal {
     | 'genius_pageviews'
     | 'deezer_rank'
     | 'lastfm_plays'
-    | 'reddit_posts';
+    | 'reddit_posts'
+    | 'certification';
   label: string;
   /** What this signal measures: a rating, or raw attention. */
   kind: 'rating' | 'popularity';
@@ -114,6 +134,12 @@ export function popularityToScore(count: number, midpoint: number, steepness: nu
   return round2(clamp(10 / (1 + Math.exp(-(magnitude - midpoint) * steepness)), 0, 10));
 }
 
+/** Deezer's bounded rank: a power curve over its share of the 0-1,000,000 range. */
+export function rankToScore(rank: number, exponent: number): number {
+  if (!Number.isFinite(rank) || rank <= 0) return 0;
+  return round2(clamp(10 * clamp(rank / 1_000_000, 0, 1) ** exponent, 0, 10));
+}
+
 /** MusicBrainz votes are 0-5 stars; the score scale is 0-10. */
 const starsToScore = (stars: number) => round2(clamp(stars * 2, 0, 10));
 
@@ -132,6 +158,8 @@ export interface ScoreInputs {
   lastfmPlays?: number | null;
   /** Reddit posts mentioning the track, and their combined upvotes. */
   reddit?: { posts: number; upvotes: number } | null;
+  /** Highest sales certification on record for the track, if any. */
+  certification?: Certification | null;
 }
 
 export function computePublicScore(inputs: ScoreInputs): PublicScore {
@@ -182,11 +210,7 @@ export function computePublicScore(inputs: ScoreInputs): PublicScore {
       source: 'deezer_rank',
       label: 'Deezer listener rank',
       kind: 'popularity',
-      score: popularityToScore(
-        inputs.deezerRank,
-        curves.deezerRank.midpoint,
-        curves.deezerRank.steepness,
-      ),
+      score: rankToScore(inputs.deezerRank, curves.deezerRank.exponent),
       weight: weights.deezerRank,
       detail: { rank: inputs.deezerRank },
     });
@@ -246,9 +270,16 @@ export function computePublicScore(inputs: ScoreInputs): PublicScore {
       ? ratings.reduce((sum, s) => sum + s.weight * s.score, 0) / ratingWeight
       : 0;
 
-  const weighted =
+  const blended =
     (popularityScore * popularityWeight + ratingScore * ratingWeight) /
     (popularityWeight + ratingWeight);
+
+  // Applied as a pull towards 10 rather than a flat addition. Adding a constant
+  // sends every certified track to the ceiling and destroys the ordering among
+  // them; a proportional pull lifts a mid-table record noticeably, nudges an
+  // already-huge one, and never saturates.
+  const pull = inputs.certification ? TUNING.certificationPull[inputs.certification] : 0;
+  const weighted = blended + (10 - blended) * pull;
 
   // Confidence rewards corroboration: several independent sources agreeing is
   // worth more than one source shouting. Full marks needs roughly half the
@@ -256,6 +287,17 @@ export function computePublicScore(inputs: ScoreInputs): PublicScore {
   const available =
     Object.values(weights).reduce((a, b) => a + b, 0) / 2;
   const confidence = round2(clamp(totalWeight / available, 0, 1));
+
+  if (pull > 0 && inputs.certification) {
+    signals.push({
+      source: 'certification',
+      label: `Certified ${inputs.certification.replace('_', ' ')}`,
+      kind: 'rating',
+      score: round2(clamp(weighted, 0, 10)),
+      weight: 0,
+      detail: { level: inputs.certification, lift: round2(weighted - blended) },
+    });
+  }
 
   return { score: round2(clamp(weighted, 0, 10)), signals, confidence };
 }

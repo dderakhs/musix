@@ -2,23 +2,23 @@ import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { fetchCharts } from '../lib/api';
 import type { ChartEntry } from '../lib/types';
-import { TIERS } from '../lib/tiers';
 import SearchBox from '../components/SearchBox';
+import Rail from '../components/Rail';
 import './HomePage.css';
 
-const EXAMPLES = ['Drake', 'Kendrick Lamar', 'Radiohead', 'SZA', 'Fleetwood Mac', 'Tyler, The Creator'];
+const EXAMPLES = ['Drake', 'Juice WRLD', 'Kendrick Lamar', 'SZA', 'Radiohead', 'Tyler, The Creator'];
 
 export default function HomePage() {
-  const [chart, setChart] = useState<ChartEntry[] | null>(null);
+  const [charts, setCharts] = useState<{ songs: ChartEntry[]; albums: ChartEntry[] } | null>(null);
 
   useEffect(() => {
     const controller = new AbortController();
-    fetchCharts(controller.signal)
+    fetchCharts(100, controller.signal)
       .then((r) => {
-        if (!controller.signal.aborted) setChart(r.songs);
+        if (!controller.signal.aborted) setCharts(r);
       })
       .catch(() => {
-        if (!controller.signal.aborted) setChart([]);
+        if (!controller.signal.aborted) setCharts({ songs: [], albums: [] });
       });
     return () => controller.abort();
   }, []);
@@ -48,99 +48,47 @@ export default function HomePage() {
         </div>
       </section>
 
-      <section className="container home-section">
-        <div className="home-sectionhead">
-          <h2 className="home-sectiontitle">Popular right now</h2>
-          <p className="muted home-sectionsub">The most-played songs today</p>
-        </div>
+      <div className="container">
+        <Rail
+          title="Popular albums this week"
+          subtitle="The most-played records right now"
+          action={<Link className="btn railblock-more" to="/charts">See all</Link>}
+        >
+          {charts === null
+            ? Array.from({ length: 8 }, (_, i) => <div key={i} className="skeleton chartskel" />)
+            : charts.albums.slice(0, 30).map((a) => <ChartCard key={`al-${a.rank}`} entry={a} kind="album" />)}
+        </Rail>
 
-        {chart === null ? (
-          <div className="rail">
-            {Array.from({ length: 8 }, (_, i) => (
-              <div key={i} className="skeleton home-chartskel" />
-            ))}
-          </div>
-        ) : chart.length === 0 ? (
-          <p className="muted">The chart is unavailable right now.</p>
-        ) : (
-          <div className="rail">
-            {chart.slice(0, 40).map((song) => (
-              <Link
-                key={`${song.rank}-${song.itunesTrackId}`}
-                className="chartcard"
-                to={song.itunesTrackId ? `/track/${song.itunesTrackId}` : `/search?q=${encodeURIComponent(`${song.artistName} ${song.title}`)}`}
-              >
-                <span className="chartcard-art">
-                  {song.artworkUrl && <img src={song.artworkUrl} alt="" loading="lazy" />}
-                  <span className="chartcard-rank">{song.rank}</span>
-                </span>
-                <span className="chartcard-title">{song.title}</span>
-                <span className="muted chartcard-artist">{song.artistName}</span>
-              </Link>
-            ))}
-          </div>
-        )}
-      </section>
-
-      <section className="container home-section home-about" id="about">
-        <div className="home-sectionhead">
-          <h2 className="home-sectiontitle">About musix</h2>
-        </div>
-
-        <div className="home-aboutgrid">
-          <div className="home-aboutcol">
-            <p>
-              musix plots a discography the way an episode graph plots a TV series. Every
-              track gets a score out of ten and a colour, so a great run, a weak stretch or a
-              front-loaded album is visible before you read a single number.
-            </p>
-            <p>
-              There are two scores. The <strong>public score</strong> is what the world thinks,
-              and it leads everywhere by default. The <strong>user score</strong> is the plain
-              average of what musix members have rated — no weighting, no blending. You can
-              switch between them from the control in the header.
-            </p>
-          </div>
-
-          <div className="home-aboutcol">
-            <h3 className="home-abouth3">Where the public score comes from</h3>
-            <p>
-              It combines how well a track is <em>rated</em> with how much attention it
-              actually commands. Community star ratings and vote counts come from
-              MusicBrainz. Attention is measured from Genius lyrics pageviews, Deezer
-              listener rank, Last.fm scrobbles and Reddit discussion volume. Tracklists,
-              artwork and previews come from the iTunes Search API and the Cover Art Archive.
-            </p>
-            <p>
-              Attention counts for roughly twice as much as votes. Star ratings are sparse and
-              skew towards older, canonical records, so on anything recent they are close to
-              silent — while a song everyone is playing and arguing about is unambiguous. Open
-              any track to see exactly which signals fed its number and how much each counted.
-            </p>
-            <p className="muted home-aboutnote">
-              No free API publishes per-track critic scores, so this is a measure of public
-              reception rather than a critics&rsquo; average.
-            </p>
-          </div>
-        </div>
-
-        <div className="home-tiers">
-          <h3 className="home-abouth3">The scale</h3>
-          <div className="home-tierrow">
-            {TIERS.map((tier) => (
-              <span key={tier.id} className="home-tier">
-                <span
-                  className="home-tierchip"
-                  style={{ background: tier.colour, color: tier.ink }}
-                >
-                  {tier.min === 0 ? '<3' : `${tier.min.toFixed(0)}+`}
-                </span>
-                {tier.label}
-              </span>
-            ))}
-          </div>
-        </div>
-      </section>
+        <Rail
+          title="Popular singles this week"
+          subtitle="The most-played songs right now"
+          action={<Link className="btn railblock-more" to="/charts?tab=songs">See all</Link>}
+        >
+          {charts === null
+            ? Array.from({ length: 8 }, (_, i) => <div key={i} className="skeleton chartskel" />)
+            : charts.songs.slice(0, 30).map((s) => <ChartCard key={`sg-${s.rank}`} entry={s} kind="song" />)}
+        </Rail>
+      </div>
     </div>
+  );
+}
+
+export function ChartCard({ entry, kind }: { entry: ChartEntry; kind: 'album' | 'song' }) {
+  const href =
+    kind === 'album' && entry.itunesCollectionId
+      ? `/album/${entry.itunesCollectionId}`
+      : entry.itunesTrackId
+        ? `/track/${entry.itunesTrackId}`
+        : `/search?q=${encodeURIComponent(`${entry.artistName} ${entry.title}`)}`;
+
+  return (
+    <Link className="chartcard" to={href}>
+      <span className="chartcard-art">
+        {entry.artworkUrl && <img src={entry.artworkUrl} alt="" loading="lazy" />}
+        <span className="chartcard-rank">{entry.rank}</span>
+      </span>
+      <span className="chartcard-title">{entry.title}</span>
+      <span className="muted chartcard-artist">{entry.artistName}</span>
+    </Link>
   );
 }

@@ -1,22 +1,29 @@
 /**
  * GET /api/search?q=...  ->  { artists, albums, songs }
  *
- * iTunes supplies the catalogue matches; Deezer supplies artist photos and fan
- * counts, which iTunes has no equivalent of. The fan count is what makes the
- * ranking useful: a search for "drake" should lead with Drake, not with whichever
- * same-named act iTunes happened to return first.
+ * Ranking is the whole job here. iTunes' own artist search returns every act
+ * whose name brushes the query, in no useful order — five different "Drake"s
+ * before the one anybody means. So results are matched with the fuzzy keys in
+ * match.ts, deduplicated by name, and ordered by match quality first and
+ * audience size second.
  */
 import type { VercelRequest, VercelResponse } from '@vercel/node';
 import {
   artworkAt,
   classifyAlbum,
+  lookupArtistDiscography,
   searchAlbums,
   searchArtists,
   searchSongs,
+  type ItunesAlbum,
 } from './_lib/itunes.js';
-import { searchArtists as searchDeezerArtists } from './_lib/deezer.js';
-import { cacheHeaders, normaliseTitle } from './_lib/http.js';
+import { searchArtists as searchDeezerArtists, type DeezerArtist } from './_lib/deezer.js';
+import { cacheHeaders } from './_lib/http.js';
+import { compactKey, matchScore, rankValue } from './_lib/match.js';
 import { param, requireGet, sendError, sendJson } from './_lib/respond.js';
+
+/** A match this strong means the query names one specific act. */
+const STRONG_MATCH = 850;
 
 export default async function handler(req: VercelRequest, res: VercelResponse) {
   if (!requireGet(req, res)) return;
@@ -28,42 +35,94 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   }
 
   try {
-    const [artists, albums, songs, deezerArtists] = await Promise.all([
-      searchArtists(q, 20),
-      searchAlbums(q, 16),
-      searchSongs(q, 16),
-      searchDeezerArtists(q, 12).catch(() => []),
+    const [itunesArtists, albums, songs, deezerArtists] = await Promise.all([
+      searchArtists(q, 25),
+      searchAlbums(q, 20),
+      searchSongs(q, 20),
+      searchDeezerArtists(q, 20).catch(() => [] as DeezerArtist[]),
     ]);
 
-    const wanted = normaliseTitle(q);
+    // Deezer keyed by name, keeping the *most followed* act of each name. Taking
+    // the last one is how five identical "Drake" rows ended up sharing one
+    // obscure folk singer's photo.
+    const deezerByName = new Map<string, DeezerArtist>();
+    for (const a of deezerArtists) {
+      const key = compactKey(a.name);
+      const existing = deezerByName.get(key);
+      if (!existing || a.fans > existing.fans) deezerByName.set(key, a);
+    }
 
-    // Deezer's photos and fan counts, keyed by normalised name so they can be
-    // matched to the iTunes results.
-    const deezerByName = new Map(deezerArtists.map((a) => [normaliseTitle(a.name), a]));
+    // One row per distinct name; among same-named acts keep the best match, and
+    // break ties on the audience Deezer reports.
+    const byName = new Map<
+      string,
+      { itunesArtistId: number; name: string; genre: string | null; points: number; fans: number }
+    >();
 
-    const rankedArtists = artists
-      // Only acts whose name actually contains what was typed. iTunes' artist
-      // search is loose and otherwise returns names with no relation to the query.
-      .filter((a) => normaliseTitle(a.artistName).includes(wanted))
-      .map((a) => {
-        const name = normaliseTitle(a.artistName);
-        const deezer = deezerByName.get(name);
-        return {
+    for (const a of itunesArtists) {
+      const points = matchScore(a.artistName, q);
+      if (points === 0) continue;
+      const key = compactKey(a.artistName);
+      const fans = deezerByName.get(key)?.fans ?? 0;
+      const existing = byName.get(key);
+      if (!existing || points > existing.points) {
+        byName.set(key, {
           itunesArtistId: a.artistId,
           name: a.artistName,
           genre: a.primaryGenreName ?? null,
-          imageUrl: deezer?.imageUrl ?? null,
-          fans: deezer?.fans ?? 0,
-          exact: name === wanted,
-        };
+          points,
+          fans,
+        });
+      }
+    }
+
+    const rankedArtists = [...byName.values()]
+      .sort((a, b) => rankValue(b.points, b.fans) - rankValue(a.points, a.fans))
+      .slice(0, 8)
+      .map((a) => ({
+        itunesArtistId: a.itunesArtistId,
+        name: a.name,
+        genre: a.genre,
+        imageUrl: deezerByName.get(compactKey(a.name))?.imageUrl ?? null,
+        fans: a.fans,
+      }));
+
+    // When the query clearly names one artist, their own records are what the
+    // searcher wants — not every unrelated single that lists them as a feature.
+    const lead = rankedArtists[0];
+    const leadIsStrong = lead != null && matchScore(lead.name, q) >= STRONG_MATCH;
+    let ownAlbums: ItunesAlbum[] = [];
+    if (leadIsStrong) {
+      ownAlbums = await lookupArtistDiscography(lead.itunesArtistId)
+        .then((r) => r.albums)
+        .catch(() => []);
+    }
+
+    const albumScore = (a: ItunesAlbum) => {
+      const byArtist = lead && compactKey(a.artistName) === compactKey(lead.name);
+      // Their own releases first, then how well the title itself matches, then
+      // recency — which is what puts a current album above a decade-old one.
+      const year = Number((a.releaseDate ?? '').slice(0, 4)) || 0;
+      return (byArtist ? 2_000_000 : 0) + matchScore(a.collectionName, q) * 1000 + year;
+    };
+
+    const mergedAlbums = new Map<number, ItunesAlbum>();
+    for (const a of [...ownAlbums, ...albums]) {
+      if (!mergedAlbums.has(a.collectionId)) mergedAlbums.set(a.collectionId, a);
+    }
+
+    const rankedAlbums = [...mergedAlbums.values()]
+      .sort((a, b) => albumScore(b) - albumScore(a))
+      .slice(0, 24);
+
+    const rankedSongs = songs
+      .map((t) => {
+        const byArtist = lead && compactKey(t.artistName) === compactKey(lead.name);
+        return { t, score: (byArtist ? 1_000_000 : 0) + matchScore(t.trackName, q) };
       })
-      .sort((a, b) => {
-        // An exact name match is the artist being looked for, whatever its
-        // catalogue size; everything else falls back to audience size.
-        if (a.exact !== b.exact) return a.exact ? -1 : 1;
-        return b.fans - a.fans;
-      })
-      .slice(0, 8);
+      .sort((a, b) => b.score - a.score)
+      .slice(0, 12)
+      .map(({ t }) => t);
 
     sendJson(
       res,
@@ -71,7 +130,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       {
         query: q,
         artists: rankedArtists,
-        albums: albums.map((a) => ({
+        albums: rankedAlbums.map((a) => ({
           itunesCollectionId: a.collectionId,
           itunesArtistId: a.artistId ?? null,
           title: a.collectionName,
@@ -82,7 +141,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
           albumType: classifyAlbum(a),
           coverUrl: artworkAt(a.artworkUrl100, 300),
         })),
-        songs: songs.map((t) => ({
+        songs: rankedSongs.map((t) => ({
           itunesTrackId: t.trackId,
           itunesCollectionId: t.collectionId,
           title: t.trackName,
