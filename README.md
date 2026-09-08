@@ -179,18 +179,29 @@ If the Supabase variables are missing the app still runs: it serves the catalogu
 and public scores, and shows a banner naming the variable that is missing or
 unusable.
 
-Three things catch people out on Vercel:
+The browser credentials are accepted under any of the names below, resolved at
+build time in this order, so the Vercel Supabase integration's own variables work
+without hand-made `VITE_` copies:
 
-- **Spelling is exact.** Vite only inlines variables named precisely
-  `VITE_SUPABASE_URL` and `VITE_SUPABASE_ANON_KEY`. An abbreviation like
-  `VITE_SUPA_ANON_KEY` is simply a different variable and will not be read.
-- **The two `VITE_` variables should be type *Config*, not *Secret*.** They are
-  public by design — the anon key is meant to ship to the browser and is what RLS
-  is there to guard. Vercel warns when a `VITE_`-prefixed variable is marked
-  secret, because the prefix publishes it regardless. Keep
-  `SUPABASE_SERVICE_ROLE_KEY` as a secret; it must never reach the client.
-- **`VITE_*` variables are inlined at build time**, so adding or editing one has
-  no effect until you redeploy.
+| | Accepted names |
+|---|---|
+| URL | `VITE_SUPABASE_URL`, `SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_URL` |
+| anon key | `VITE_SUPABASE_ANON_KEY`, `SUPABASE_ANON_KEY`, `SUPABASE_PUBLISHABLE_KEY`, `NEXT_PUBLIC_SUPABASE_ANON_KEY` |
+
+Every build prints which ones it resolved:
+`[musix] client Supabase config: url=SUPABASE_URL key=SUPABASE_ANON_KEY`, or
+`MISSING`. Read that line in the Vercel build log before debugging anything else.
+
+Two things still catch people out on Vercel:
+
+- **These two values must be type *Config*, not *Secret*.** They are public by
+  design — the anon key ships to the browser and RLS is what guards the data. A
+  secret is write-only and cannot be converted afterwards, so a variable saved as
+  Secret has to be deleted and re-created as Config. Keep
+  `SUPABASE_SERVICE_ROLE_KEY` secret; it must never reach the client, and the
+  build fails outright if it is ever found in a client variable.
+- **They are inlined at build time**, so adding or editing one has no effect
+  until you redeploy.
 
 ## Scripts
 
