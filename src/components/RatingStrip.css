@@ -1,0 +1,47 @@
+.rating-strip {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.rating-strip-buttons {
+  display: flex;
+  /* 2px surface gaps do the separating, not borders. */
+  gap: 2px;
+}
+
+.rating-strip-button {
+  width: 30px;
+  height: 30px;
+  border-radius: var(--radius-s);
+  background: var(--surface-2);
+  color: var(--text-secondary);
+  font-size: 12px;
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+  transition: background 100ms ease, color 100ms ease, transform 100ms ease;
+}
+
+.rating-strip-button[data-filled='true'] {
+  background: var(--series-user);
+  color: #fff;
+}
+
+.rating-strip-button[data-exact='true'] {
+  transform: translateY(-2px);
+}
+
+.rating-strip-button:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+
+.rating-strip-clear {
+  font-size: 12px;
+  text-decoration: underline;
+}
+
+@media (max-width: 520px) {
+  .rating-strip-button { width: 26px; height: 26px; font-size: 11px; }
+}

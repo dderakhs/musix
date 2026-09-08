@@ -1,0 +1,83 @@
+.home { padding: 56px 20px 80px; }
+
+.home-hero { max-width: 720px; }
+
+.home-title {
+  margin: 0 0 16px;
+  font-size: clamp(32px, 5.5vw, 52px);
+  line-height: 1.08;
+  letter-spacing: -0.03em;
+  font-weight: 700;
+}
+
+.home-title-accent {
+  /* A large word is not a data mark; it takes ink, not a series colour. */
+  border-bottom: 5px solid var(--series-user);
+  padding-bottom: 1px;
+}
+
+.home-lede {
+  margin: 0 0 26px;
+  font-size: 17px;
+  line-height: 1.55;
+  color: var(--text-secondary);
+}
+
+.home-examples {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.home-examples-label {
+  font-size: 12px;
+  text-transform: uppercase;
+  letter-spacing: 0.07em;
+  margin-right: 2px;
+}
+
+.home-example { transition: background 120ms ease; }
+.home-example:hover { background: var(--text-primary); color: var(--page); text-decoration: none; }
+
+.home-scores {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+  gap: 16px;
+  margin-top: 56px;
+}
+
+.home-score-card { padding: 22px; }
+
+.home-score-head {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  margin-bottom: 12px;
+}
+.home-score-head h2 { margin: 0; font-size: 16px; font-weight: 650; }
+
+.home-score-card p { margin: 0 0 10px; font-size: 14px; line-height: 1.55; }
+.home-score-note { font-size: 13px; }
+
+.home-sources { margin-top: 56px; }
+
+.home-sources-title {
+  font-size: 11px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.07em;
+  color: var(--text-muted);
+  margin: 0 0 14px;
+}
+
+.home-sources-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+  gap: 8px 24px;
+  font-size: 14px;
+  color: var(--text-secondary);
+}

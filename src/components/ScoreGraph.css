@@ -1,0 +1,142 @@
+.graph {
+  margin: 0;
+}
+
+.graph-legend {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  flex-wrap: wrap;
+  padding: 0 0 10px 44px;
+}
+
+.graph-legend-item {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--text-secondary);
+  padding: 3px 2px;
+}
+.graph-legend-item:hover { color: var(--text-primary); }
+
+.graph-legend-swatch {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  transition: opacity 120ms ease;
+}
+
+.graph-legend-hint {
+  font-size: 12px;
+  margin-left: auto;
+}
+
+.graph-plot {
+  transition: opacity 160ms ease;
+}
+
+/* Axis and peak text wear text tokens, never the series colour. */
+.graph-axis-text {
+  fill: var(--text-muted);
+  font-size: 11px;
+}
+
+/* Names the extreme of each series below the plot, where nothing can collide
+   with a mark. Text wears text tokens; the coloured dot carries identity. */
+.graph-peaks {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px 26px;
+  margin: 6px 0 0;
+  padding: 10px 4px 2px 44px;
+  border-top: 1px solid var(--border);
+  font-size: 12px;
+}
+
+.graph-peak {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  min-width: 0;
+}
+
+.graph-peak strong {
+  font-weight: 600;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  max-width: 260px;
+}
+
+.graph-peak-value {
+  font-variant-numeric: tabular-nums;
+  color: var(--text-secondary);
+}
+
+.graph-tooltip {
+  padding: 10px 12px;
+  min-width: 180px;
+  max-width: 280px;
+  pointer-events: none;
+}
+
+.graph-tooltip-album {
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  margin-bottom: 2px;
+}
+
+.graph-tooltip-title {
+  font-size: 14px;
+  font-weight: 600;
+  line-height: 1.3;
+  margin-bottom: 8px;
+}
+
+.graph-tooltip-scores {
+  margin: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  font-size: 13px;
+}
+.graph-tooltip-scores > div {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+}
+.graph-tooltip-scores dt {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  color: var(--text-secondary);
+}
+.graph-tooltip-scores dd {
+  margin: 0;
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+}
+
+.dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  display: inline-block;
+}
+
+.graph-empty {
+  padding: 48px 24px;
+  text-align: center;
+  color: var(--text-muted);
+  font-size: 14px;
+}
+
+@media (max-width: 640px) {
+  .graph-legend { padding-left: 8px; }
+  .graph-peaks { padding-left: 8px; }
+  .graph-legend-hint { display: none; }
+}

@@ -1,0 +1,31 @@
+.app {
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+}
+
+.app-main { flex: 1; }
+
+.app-banner {
+  background: var(--surface-2);
+  border-bottom: 1px solid var(--border);
+  color: var(--text-secondary);
+  font-size: 13px;
+  padding: 9px 20px;
+  text-align: center;
+}
+
+.app-footer {
+  border-top: 1px solid var(--border);
+  margin-top: 40px;
+  padding: 22px 0;
+}
+
+.app-footer-inner {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 16px;
+  flex-wrap: wrap;
+  font-size: 12px;
+}

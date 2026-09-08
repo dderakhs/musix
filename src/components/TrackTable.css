@@ -1,0 +1,76 @@
+/* Wide content scrolls inside its own container; the page never scrolls sideways. */
+.track-table-wrap {
+  overflow-x: auto;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  background: var(--surface-1);
+}
+
+.track-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 14px;
+  min-width: 560px;
+}
+
+.track-table th {
+  text-align: left;
+  font-size: 11px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--text-muted);
+  padding: 10px 12px;
+  border-bottom: 1px solid var(--border);
+  white-space: nowrap;
+}
+
+.track-table th .dot { margin-right: 6px; vertical-align: -1px; }
+
+.track-table td {
+  padding: 9px 12px;
+  border-bottom: 1px solid var(--border);
+  vertical-align: middle;
+}
+
+.track-table tbody tr:last-child td { border-bottom: none; }
+
+.track-table tbody tr {
+  cursor: pointer;
+  transition: background 100ms ease;
+}
+.track-table tbody tr:hover { background: var(--surface-2); }
+.track-table tbody tr[data-selected='true'] {
+  background: color-mix(in srgb, var(--series-user) 10%, var(--surface-1));
+}
+
+.col-num {
+  width: 42px;
+  color: var(--text-muted);
+  font-variant-numeric: tabular-nums;
+}
+
+.col-time, .col-score {
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+.col-score { width: 84px; }
+.col-time { width: 70px; }
+.col-album { max-width: 200px; }
+
+.track-table .count { font-size: 12px; }
+
+.track-title { font-weight: 500; }
+
+.explicit {
+  display: inline-block;
+  margin-left: 6px;
+  padding: 0 4px;
+  border-radius: 3px;
+  background: var(--surface-2);
+  color: var(--text-muted);
+  font-size: 10px;
+  font-weight: 700;
+  vertical-align: 1px;
+}

@@ -1,0 +1,52 @@
+.breakdown-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.breakdown-row-head {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 12px;
+  font-size: 13px;
+}
+
+.breakdown-label { color: var(--text-secondary); }
+
+.breakdown-score {
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+}
+
+.breakdown-meter {
+  height: 4px;
+  border-radius: 2px;
+  /* Unfilled track is a lighter step of the fill's own ramp. */
+  background: color-mix(in srgb, var(--series-public) 16%, var(--surface-2));
+  margin: 5px 0 4px;
+  overflow: hidden;
+}
+
+.breakdown-meter-fill {
+  display: block;
+  height: 100%;
+  border-radius: 2px;
+  background: var(--series-public);
+}
+
+.breakdown-detail { font-size: 12px; }
+
+.breakdown-confidence {
+  font-size: 12px;
+  margin: 14px 0 0;
+}
+
+.breakdown-empty {
+  font-size: 13px;
+  margin: 0;
+  line-height: 1.5;
+}
