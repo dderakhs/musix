@@ -54,6 +54,11 @@
 
 .artist-graph-card { padding: 18px 16px 8px; }
 
+.artist-grid-card {
+  padding: 18px;
+  margin-top: 16px;
+}
+
 .artist-body {
   display: grid;
   grid-template-columns: minmax(0, 1fr) 360px;

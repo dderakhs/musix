@@ -23,11 +23,6 @@
   transition: background 100ms ease, color 100ms ease, transform 100ms ease;
 }
 
-.rating-strip-button[data-filled='true'] {
-  background: var(--series-user);
-  color: #fff;
-}
-
 .rating-strip-button[data-exact='true'] {
   transform: translateY(-2px);
 }

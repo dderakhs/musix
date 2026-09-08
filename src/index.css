@@ -30,6 +30,53 @@
   --good:           #0ca30c;
   --critical:       #d03b3b;
 
+
+  /* Rating ramp: one hue per series, stepped 1-10. Colour carries magnitude, so
+     this is a sequential ramp (single hue, light to dark on the light surface and
+     dark to light on the dark one) rather than a rainbow. Each step ships the ink
+     colour that clears 4.5:1 against it, so the number inside a cell is always
+     legible. Generated and contrast-checked; see the rating grid legend. */
+  --rate-public-1: #e1eeff;
+  --rate-public-1-ink: #0b0b0b;
+  --rate-public-2: #c7dffe;
+  --rate-public-2-ink: #0b0b0b;
+  --rate-public-3: #add0fe;
+  --rate-public-3-ink: #0b0b0b;
+  --rate-public-4: #92c0fd;
+  --rate-public-4-ink: #0b0b0b;
+  --rate-public-5: #7bb0f7;
+  --rate-public-5-ink: #0b0b0b;
+  --rate-public-6: #63a1f1;
+  --rate-public-6-ink: #0b0b0b;
+  --rate-public-7: #4a91ea;
+  --rate-public-7-ink: #0b0b0b;
+  --rate-public-8: #2f80e3;
+  --rate-public-8-ink: #0b0b0b;
+  --rate-public-9: #0470db;
+  --rate-public-9-ink: #ffffff;
+  --rate-public-10: #0062c2;
+  --rate-public-10-ink: #ffffff;
+  --rate-user-1: #ffe7df;
+  --rate-user-1-ink: #0b0b0b;
+  --rate-user-2: #ffd1c0;
+  --rate-user-2-ink: #0b0b0b;
+  --rate-user-3: #febba2;
+  --rate-user-3-ink: #0b0b0b;
+  --rate-user-4: #f9a587;
+  --rate-user-4-ink: #0b0b0b;
+  --rate-user-5: #f1916e;
+  --rate-user-5-ink: #0b0b0b;
+  --rate-user-6: #e87c54;
+  --rate-user-6-ink: #0b0b0b;
+  --rate-user-7: #df6637;
+  --rate-user-7-ink: #0b0b0b;
+  --rate-user-8: #d64f0d;
+  --rate-user-8-ink: #0b0b0b;
+  --rate-user-9: #c04403;
+  --rate-user-9-ink: #ffffff;
+  --rate-user-10: #a93b03;
+  --rate-user-10-ink: #ffffff;
+
   --radius:   10px;
   --radius-s: 6px;
   --shadow:   0 1px 2px rgba(11, 11, 11, 0.06), 0 8px 24px rgba(11, 11, 11, 0.06);
@@ -55,6 +102,47 @@
     --good:           #0ca30c;
     --critical:       #d03b3b;
     --shadow:         0 1px 2px rgba(0, 0, 0, 0.5), 0 8px 24px rgba(0, 0, 0, 0.4);
+
+    --rate-public-1: #20324a;
+    --rate-public-1-ink: #ffffff;
+    --rate-public-2: #274062;
+    --rate-public-2-ink: #ffffff;
+    --rate-public-3: #2d4e7a;
+    --rate-public-3-ink: #ffffff;
+    --rate-public-4: #335d93;
+    --rate-public-4-ink: #ffffff;
+    --rate-public-5: #396cae;
+    --rate-public-5-ink: #ffffff;
+    --rate-public-6: #3f7cc9;
+    --rate-public-6-ink: #0b0b0b;
+    --rate-public-7: #458be4;
+    --rate-public-7-ink: #0b0b0b;
+    --rate-public-8: #4e9cfe;
+    --rate-public-8-ink: #0b0b0b;
+    --rate-public-9: #70aefe;
+    --rate-public-9-ink: #0b0b0b;
+    --rate-public-10: #8ebfff;
+    --rate-public-10-ink: #0b0b0b;
+    --rate-user-1: #48281c;
+    --rate-user-1-ink: #ffffff;
+    --rate-user-2: #5e3121;
+    --rate-user-2-ink: #ffffff;
+    --rate-user-3: #763b25;
+    --rate-user-3-ink: #ffffff;
+    --rate-user-4: #8d4428;
+    --rate-user-4-ink: #ffffff;
+    --rate-user-5: #a64e2c;
+    --rate-user-5-ink: #ffffff;
+    --rate-user-6: #c0572f;
+    --rate-user-6-ink: #ffffff;
+    --rate-user-7: #da6132;
+    --rate-user-7-ink: #0b0b0b;
+    --rate-user-8: #f46b34;
+    --rate-user-8-ink: #0b0b0b;
+    --rate-user-9: #ff8355;
+    --rate-user-9-ink: #0b0b0b;
+    --rate-user-10: #ffa07e;
+    --rate-user-10-ink: #0b0b0b;
   }
 }
 
@@ -73,6 +161,47 @@
   --series-public:  #3987e5;
   --series-user:    #d95926;
   --shadow:         0 1px 2px rgba(0, 0, 0, 0.5), 0 8px 24px rgba(0, 0, 0, 0.4);
+
+  --rate-public-1: #20324a;
+  --rate-public-1-ink: #ffffff;
+  --rate-public-2: #274062;
+  --rate-public-2-ink: #ffffff;
+  --rate-public-3: #2d4e7a;
+  --rate-public-3-ink: #ffffff;
+  --rate-public-4: #335d93;
+  --rate-public-4-ink: #ffffff;
+  --rate-public-5: #396cae;
+  --rate-public-5-ink: #ffffff;
+  --rate-public-6: #3f7cc9;
+  --rate-public-6-ink: #0b0b0b;
+  --rate-public-7: #458be4;
+  --rate-public-7-ink: #0b0b0b;
+  --rate-public-8: #4e9cfe;
+  --rate-public-8-ink: #0b0b0b;
+  --rate-public-9: #70aefe;
+  --rate-public-9-ink: #0b0b0b;
+  --rate-public-10: #8ebfff;
+  --rate-public-10-ink: #0b0b0b;
+  --rate-user-1: #48281c;
+  --rate-user-1-ink: #ffffff;
+  --rate-user-2: #5e3121;
+  --rate-user-2-ink: #ffffff;
+  --rate-user-3: #763b25;
+  --rate-user-3-ink: #ffffff;
+  --rate-user-4: #8d4428;
+  --rate-user-4-ink: #ffffff;
+  --rate-user-5: #a64e2c;
+  --rate-user-5-ink: #ffffff;
+  --rate-user-6: #c0572f;
+  --rate-user-6-ink: #ffffff;
+  --rate-user-7: #da6132;
+  --rate-user-7-ink: #0b0b0b;
+  --rate-user-8: #f46b34;
+  --rate-user-8-ink: #0b0b0b;
+  --rate-user-9: #ff8355;
+  --rate-user-9-ink: #0b0b0b;
+  --rate-user-10: #ffa07e;
+  --rate-user-10-ink: #0b0b0b;
 }
 
 * { box-sizing: border-box; }

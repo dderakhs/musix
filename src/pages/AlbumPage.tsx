@@ -6,6 +6,7 @@ import type { AlbumResponse, Track } from '../lib/types';
 import { formatScore, formatYear, pluralise } from '../lib/format';
 import { useRatingSurface } from '../lib/useRatingSurface';
 import ScoreGraph, { type SeriesKey } from '../components/ScoreGraph';
+import RatingGrid, { type Metric } from '../components/RatingGrid';
 import TrackTable from '../components/TrackTable';
 import TrackDetail from '../components/TrackDetail';
 import './AlbumPage.css';
@@ -32,6 +33,7 @@ export default function AlbumPage({ onRequestSignIn }: Props) {
     publicScore: true,
     userScore: true,
   });
+  const [metric, setMetric] = useState<Metric>('public');
 
   useEffect(() => {
     const controller = new AbortController();
@@ -170,6 +172,19 @@ export default function AlbumPage({ onRequestSignIn }: Props) {
           selectedTrackId={selectedTrackId}
           onSelectTrack={(track) => setSelectedTrackId(track.id)}
           emptyMessage="No public reception data found for this release yet — rate a track to start the user score."
+        />
+      </section>
+
+      <section className="card album-grid-card">
+        <h2 className="album-section-title">Every track, by score</h2>
+        <RatingGrid
+          groups={groups}
+          metric={metric}
+          onChangeMetric={setMetric}
+          myRatings={myRatings}
+          selectedTrackId={selectedTrackId}
+          onSelectTrack={(track) => setSelectedTrackId(track.id)}
+          canRate={canRate}
         />
       </section>
 

@@ -7,6 +7,7 @@ import type { Album, ArtistResponse, Track } from '../lib/types';
 import { formatScore, formatYear } from '../lib/format';
 import { useRatingSurface } from '../lib/useRatingSurface';
 import ScoreGraph, { type GraphGroup, type SeriesKey } from '../components/ScoreGraph';
+import RatingGrid, { type Metric } from '../components/RatingGrid';
 import TrackTable from '../components/TrackTable';
 import TrackDetail from '../components/TrackDetail';
 import './ArtistPage.css';
@@ -42,6 +43,7 @@ export default function ArtistPage({ onRequestSignIn }: Props) {
     userScore: true,
   });
   const [selectedTrackId, setSelectedTrackId] = useState<string | null>(null);
+  const [metric, setMetric] = useState<Metric>('public');
 
   // Albums we have already asked for, so the hydration effect never loops.
   const attempted = useRef<Set<string>>(new Set());
@@ -246,6 +248,19 @@ export default function ArtistPage({ onRequestSignIn }: Props) {
           emptyMessage={
             hydrating ? 'Loading tracks…' : 'No scored tracks for the selected release types yet.'
           }
+        />
+      </section>
+
+      <section className="card artist-grid-card">
+        <h2 className="artist-section-title">Every track, by score</h2>
+        <RatingGrid
+          groups={groups}
+          metric={metric}
+          onChangeMetric={setMetric}
+          myRatings={myRatings}
+          selectedTrackId={selectedTrackId}
+          onSelectTrack={(track) => setSelectedTrackId(track.id)}
+          canRate={canRate}
         />
       </section>
 

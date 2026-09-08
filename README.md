@@ -119,6 +119,26 @@ normal-vision ΔE 33.6 / 31.8, both above 3:1 contrast against their surfaces.
 The table below every chart is its accessible twin — every value the graph encodes
 is readable there as text, so nothing is gated behind hover or colour.
 
+### The rating grid
+
+Alongside the line chart, every page carries a seriesgraph-style grid: one cell per
+track, showing its 1–10 score and shaded by it. On an artist page the grid is albums
+across, track numbers down, so a whole discography reads as one colour field; on an
+album page the tracks flow across in a single band. Cells are clickable and share the
+graph's selection, and the metric toggle switches between the public score, the musix
+user score and your own ratings.
+
+Colour here encodes **magnitude**, not identity, so it uses a sequential ramp — a
+single hue per series, running light-to-dark on the light surface and dark-to-light
+on the dark one, never a rainbow. The hue follows the series it is showing (blue for
+the public score, orange for anything user-derived), which keeps the grid and the
+line chart speaking the same language. Each of the ten steps ships the ink colour
+that clears 4.5:1 against it, so the number inside a cell is always legible; the
+ramps were generated in OKLCH and contrast-checked rather than eyeballed. A scale
+legend sits above every grid, an unrated track is drawn as an empty dashed cell so it
+can never be mistaken for a low score, and the 1–10 rating strip is painted from the
+same ramp so it doubles as the key.
+
 ## Setup
 
 Requires Node 20+.

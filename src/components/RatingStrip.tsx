@@ -38,6 +38,15 @@ export default function RatingStrip({ value, disabled = false, onRate, onClear }
             onFocus={() => setHover(score)}
             onBlur={() => setHover(null)}
             onClick={() => onRate(score)}
+            style={
+              shown != null && score <= shown
+                ? {
+                    // Same ramp as the rating grid, so the strip doubles as its key.
+                    background: `var(--rate-user-${score})`,
+                    color: `var(--rate-user-${score}-ink)`,
+                  }
+                : undefined
+            }
           >
             {score}
           </button>
