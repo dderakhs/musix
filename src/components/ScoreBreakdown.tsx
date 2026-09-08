@@ -26,8 +26,8 @@ export default function ScoreBreakdown({ breakdown }: Props) {
   if (!breakdown || breakdown.signals.length === 0) {
     return (
       <p className="breakdown-empty muted">
-        No public reception data found for this track yet. MusicBrainz ratings and
-        streaming-popularity figures are sparse outside well-known releases.
+        No public reception data found for this track yet. Community ratings and
+        popularity figures are sparse outside well-known releases.
       </p>
     );
   }

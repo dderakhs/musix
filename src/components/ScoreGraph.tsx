@@ -57,7 +57,7 @@ const SERIES: Record<SeriesKey, { label: string; cssVar: string; description: st
   publicScore: {
     label: 'Public score',
     cssVar: 'var(--series-public)',
-    description: 'Aggregate of public reviews and reception signals',
+    description: 'Community ratings plus how much a track is played and discussed',
   },
   userScore: {
     label: 'User score',

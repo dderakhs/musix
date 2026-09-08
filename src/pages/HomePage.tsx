@@ -40,13 +40,16 @@ export default function HomePage() {
             <h2>Public score</h2>
           </div>
           <p className="secondary">
-            An aggregate of the public reception signals that are openly available:
-            MusicBrainz community star ratings (real votes, per recording and per album),
-            plus Deezer play-rank and Last.fm scrobbles mapped onto the same 0–10 scale.
+            How the public actually received a track: MusicBrainz community star ratings,
+            weighted alongside how much attention it commands — Genius lyrics pageviews,
+            Deezer listener rank, Last.fm scrobbles and Reddit discussion, all mapped onto
+            one 0&ndash;10 scale.
           </p>
           <p className="muted home-score-note">
-            No free API publishes per-track critic scores, so this is a composite of public
-            opinion rather than a critics&rsquo; average. Every track shows exactly which
+            Attention counts for roughly twice as much as votes, because star ratings are
+            sparse and skew old while a song everyone is playing and arguing about is
+            unambiguous. No free API publishes per-track critic scores, so this is public
+            opinion rather than a critics&rsquo; average &mdash; and every track shows which
             signals fed its number and how much each one counted.
           </p>
         </article>
@@ -74,6 +77,8 @@ export default function HomePage() {
           <li><strong>MusicBrainz</strong> — community ratings and release metadata</li>
           <li><strong>Cover Art Archive</strong> — album artwork</li>
           <li><strong>Deezer</strong> — track popularity rank</li>
+          <li><strong>Genius</strong> — lyrics pageviews (optional)</li>
+          <li><strong>Reddit</strong> — discussion volume (optional)</li>
           <li><strong>Last.fm</strong> — scrobble counts (optional)</li>
         </ul>
       </section>

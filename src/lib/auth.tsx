@@ -53,7 +53,16 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const signUp = useCallback(async (email: string, password: string) => {
     if (!supabase) throw new Error('Sign-up is unavailable: Supabase is not configured.');
-    const { data, error } = await supabase.auth.signUp({ email, password });
+    const { data, error } = await supabase.auth.signUp({
+      email,
+      password,
+      // Without this, Supabase sends the confirmation link to its project-level
+      // Site URL, which defaults to localhost — so a deployed sign-up mails a
+      // link that goes nowhere useful. Bounce it back to wherever the user
+      // actually signed up. The origin must also be listed in Supabase's
+      // Authentication -> URL Configuration redirect allowlist.
+      options: { emailRedirectTo: `${window.location.origin}/` },
+    });
     if (error) throw new Error(error.message);
     // With email confirmation on, Supabase returns a user but no session.
     return { needsConfirmation: Boolean(data.user) && !data.session };

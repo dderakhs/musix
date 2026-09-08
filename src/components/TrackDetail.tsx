@@ -91,7 +91,7 @@ export default function TrackDetail({
             Public score
           </div>
           <div className="detail-score-value">{formatScore(track.publicScore)}</div>
-          <div className="muted detail-score-note">Aggregate of public reviews</div>
+          <div className="muted detail-score-note">Ratings, plays and discussion</div>
         </div>
         <div className="detail-score">
           <div className="detail-score-label">

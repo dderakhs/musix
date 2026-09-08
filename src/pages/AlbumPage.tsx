@@ -17,6 +17,8 @@ const SOURCE_NAMES: Record<string, string> = {
   musicbrainz: 'MusicBrainz',
   deezer: 'Deezer',
   lastfm: 'Last.fm',
+  genius: 'Genius',
+  reddit: 'Reddit',
 };
 
 interface Props {

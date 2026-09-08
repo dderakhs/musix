@@ -20,12 +20,17 @@ import { cacheHeaders, normaliseTitle } from '../_lib/http.js';
 import { fetchAlbumRatings, findReleaseGroup, type MbTrackRatings } from '../_lib/musicbrainz.js';
 import { fetchAlbumPopularity, findAlbum, type DeezerAlbumData } from '../_lib/deezer.js';
 import { fetchAlbumListeners, type LastfmAlbumData } from '../_lib/lastfm.js';
+import { fetchTrackStats, geniusEnabled, type GeniusTrackStats } from '../_lib/genius.js';
+import { fetchTrackBuzz, redditEnabled, type RedditTrackBuzz } from '../_lib/reddit.js';
+import { mapPool } from '../_lib/pool.js';
 import { computePublicScore, type PublicScore } from '../_lib/score.js';
 import { serviceClient } from '../_lib/supabase.js';
 import { param, requireGet, sendError, sendJson } from '../_lib/respond.js';
 
 /** MusicBrainz is rate limited to ~1 req/s; give enrichment a hard ceiling. */
-const ENRICHMENT_BUDGET_MS = 9000;
+const ENRICHMENT_BUDGET_MS = 12000;
+/** Per-track sources fan out across the whole tracklist, so cap the parallelism. */
+const TRACK_FANOUT = 5;
 const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
 interface OutTrack {
@@ -75,6 +80,33 @@ async function enrichDeezer(artist: string, album: string): Promise<DeezerAlbumD
   return fetchAlbumPopularity(albumId);
 }
 
+/**
+ * Genius and Reddit are per-track rather than per-album, so they fan out across
+ * the whole tracklist. Both are optional: without their tokens the maps come
+ * back empty and the score is built from whatever else answered.
+ */
+async function enrichGenius(
+  artist: string,
+  tracks: ItunesTrack[],
+  deadline: number,
+): Promise<Map<ItunesTrack, GeniusTrackStats>> {
+  if (!geniusEnabled()) return new Map();
+  return mapPool(tracks, TRACK_FANOUT, deadline, (track) =>
+    fetchTrackStats(artist, track.trackName),
+  );
+}
+
+async function enrichReddit(
+  artist: string,
+  tracks: ItunesTrack[],
+  deadline: number,
+): Promise<Map<ItunesTrack, RedditTrackBuzz>> {
+  if (!redditEnabled()) return new Map();
+  return mapPool(tracks, TRACK_FANOUT, deadline, (track) =>
+    fetchTrackBuzz(artist, track.trackName),
+  );
+}
+
 export default async function handler(req: VercelRequest, res: VercelResponse) {
   if (!requireGet(req, res)) return;
 
@@ -98,11 +130,17 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     }
 
     const deadline = Date.now() + ENRICHMENT_BUDGET_MS;
-    const [mb, deezer, lastfm] = await Promise.all([
+    const [mb, deezer, lastfm, genius, reddit] = await Promise.all([
       enrichMusicBrainz(album.artistName, album.collectionName, deadline).catch(() => null),
       enrichDeezer(album.artistName, album.collectionName).catch(() => null),
       fetchAlbumListeners(album.artistName, album.collectionName).catch(
         () => null as LastfmAlbumData | null,
+      ),
+      enrichGenius(album.artistName, tracks, deadline).catch(
+        () => new Map<ItunesTrack, GeniusTrackStats>(),
+      ),
+      enrichReddit(album.artistName, tracks, deadline).catch(
+        () => new Map<ItunesTrack, RedditTrackBuzz>(),
       ),
     ]);
 
@@ -117,8 +155,10 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       const score = computePublicScore({
         recordingRating: rec?.value != null ? { value: rec.value, votes: rec['votes-count'] } : null,
         releaseGroupRating,
+        geniusPageviews: genius.get(t)?.pageviews ?? null,
         deezerRank: deezer?.rankByTitle.get(key) ?? null,
         lastfmPlays: lastfm?.listenersByTitle.get(key) ?? null,
+        reddit: reddit.get(t) ?? null,
       });
       return { track: t, score };
     });
@@ -153,6 +193,8 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
           musicbrainz: Boolean(mb),
           deezer: Boolean(deezer),
           lastfm: Boolean(lastfm),
+          genius: genius.size > 0,
+          reddit: reddit.size > 0,
         },
       },
       // Short cache: user scores are part of this payload and must stay fresh.

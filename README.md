@@ -29,15 +29,44 @@ What it shows instead is a composite of the public reception signals that genuin
 
 | Signal | Source | Weight | What it measures |
 |---|---|---|---|
-| Community star rating (recording) | MusicBrainz | up to 3.0 | Actual public votes on that specific track |
-| Community star rating (release group) | MusicBrainz | up to 1.2 | Album-level votes, used as a prior for tracks with none |
-| Listener rank | Deezer | 1.0 | How much the track is actually played |
-| Scrobble count | Last.fm *(optional)* | 1.0 | Long-tail listening, when an API key is configured |
+| Community star rating (recording) | MusicBrainz | up to 2.5 | Actual public votes on that specific track |
+| Community star rating (release group) | MusicBrainz | up to 1.0 | Album-level votes, used as a prior for tracks with none |
+| Lyrics pageviews | Genius *(optional)* | 2.5 | Attention on this exact track — people look a song up in rough proportion to how much they are playing and discussing it |
+| Listener rank | Deezer | 2.0 | How much the track is actually played |
+| Scrobble count | Last.fm *(optional)* | 1.5 | Long-tail listening |
+| Discussion volume | Reddit *(optional)* | 1.0 | How much a track is talked about |
 
-The MusicBrainz weights scale with vote count — one vote barely moves the number;
-five or more is treated as a settled community opinion. Popularity counts are mapped
-onto 0–10 through a logistic curve over their order of magnitude, because play counts
-span six decades and linear scaling would flatten everything below the megahits.
+**Attention outweighs votes roughly two to one, deliberately.** Community star
+ratings are sparse and skew towards older canonical records, so on anything recent
+they are close to silent — while a track everybody is playing and arguing about is
+unambiguous evidence of how it landed. A huge song should read as a huge song.
+
+The MusicBrainz weights scale with vote count: one vote barely moves the number,
+five or more is a settled opinion. Raw counts are mapped onto 0–10 through a
+logistic curve over their order of magnitude, because they span six decades and
+linear scaling would flatten everything below the megahits.
+
+The attention signals are combined with a **power mean rather than a plain
+average**. They all proxy the same latent thing, but each is blind to a different
+slice — Last.fm badly under-counts recent rap, Genius has nothing for
+instrumentals, Reddit misses non-English music. Averaging lets whichever source is
+blindest drag a genuinely huge track down to mediocre, so the blend leans towards
+the strongest evidence instead. Ratings stay a plain weighted mean, since a vote is
+a vote.
+
+Every constant above lives in one `TUNING` block at the top of `api/_lib/score.ts`.
+Representative outputs at the current settings:
+
+| Track profile | Score |
+|---|---|
+| Megahit on a huge album | 9.3 |
+| Deep cut on a huge album | 8.4 |
+| Solid mid-tier indie track | 6.1 |
+| Obscure album filler | 2.2 |
+| Canonical classic, well voted | 9.2 |
+
+Only counts and metadata are ever read from Genius and Reddit — never lyrics or
+post bodies, which are licensed or user-owned content.
 
 **Every track shows its own working.** Click any point on the graph, or any row in
 the table, and the detail panel lists exactly which signals fed that number, what
@@ -56,6 +85,8 @@ All keyless and free except where noted. Nothing is scraped from HTML.
 - **[MusicBrainz](https://musicbrainz.org/doc/MusicBrainz_API)** — community ratings and release metadata. Rate limited to ~1 request/second and requires a descriptive `User-Agent`; both are honoured (`api/_lib/musicbrainz.ts`).
 - **[Cover Art Archive](https://coverartarchive.org/)** — album artwork by release group.
 - **[Deezer](https://developers.deezer.com/api)** — per-track popularity rank and album fan counts.
+- **[Genius](https://docs.genius.com)** — optional; needs a free access token. Per-song lyrics pageviews only; lyrics themselves are never fetched or stored.
+- **[Reddit](https://www.reddit.com/dev/api)** — optional; needs a free OAuth client id/secret. Public post counts and scores only, never post bodies. Its search is keyword-based, so a common-word title picks up unrelated posts — which is why the signal carries a modest weight.
 - **[Last.fm](https://www.last.fm/api)** — optional; needs a free API key. Without one the module no-ops and the score is built from the rest.
 
 ## Architecture
