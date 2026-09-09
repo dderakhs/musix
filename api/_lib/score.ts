@@ -55,6 +55,13 @@ export const TUNING = {
     lastfmPlays: 1.5,
     /** Discussion volume. Keyword search, so deliberately modest. */
     redditPosts: 1.0,
+    /**
+     * A year-end chart placing. Weighted just under Spotify because it is the
+     * only signal here that is both hard and *timeless*: it is an audited fact
+     * about what a song did, and unlike every streaming measure it does not
+     * decay as the record ages.
+     */
+    chartPeak: 3.0,
   },
   curves: {
     /**
@@ -80,6 +87,12 @@ export const TUNING = {
     spotifyPopularity: { exponent: 0.6 },
     lastfmPlays: { midpoint: 4.6, steepness: 1.5 },
     geniusPageviews: { midpoint: 5.2, steepness: 2.0 },
+    /**
+     * Chart placings. Merely reaching a year-end top 100 is a large fact, so
+     * the band is narrow: last place still floors the song around 6.8, and the
+     * curve spends most of its range separating the very top from the rest.
+     */
+    chartPeak: { span: 3.2, exponent: 0.75 },
     // Post counts are small numbers; ten posts is already real discussion.
     redditPosts: { midpoint: 0.85, steepness: 1.9 },
   },
@@ -137,6 +150,7 @@ export interface ScoreSignal {
     | 'deezer_rank'
     | 'lastfm_plays'
     | 'reddit_posts'
+    | 'chart_peak'
     | 'certification';
   label: string;
   /** What this signal measures: a rating, or raw attention. */
@@ -204,6 +218,20 @@ export function streamingScore(rank: number, artistPeakRank: number | null): num
   return round2(clamp(relative * w + absolute * (1 - w), 0, 10));
 }
 
+/**
+ * A year-end chart placing, on the 0-10 scale.
+ *
+ * Charting at all is the fact that matters most; where in the hundred is a
+ * refinement. So the whole 100 places are compressed into a narrow band at the
+ * top of the scale rather than spread across it.
+ */
+export function chartScore(rank: number, chartSize = 100): number {
+  if (!Number.isFinite(rank) || rank < 1) return 0;
+  const depth = clamp((rank - 1) / Math.max(chartSize - 1, 1), 0, 1);
+  const { span, exponent } = TUNING.curves.chartPeak;
+  return round2(clamp(10 - span * depth ** exponent, 0, 10));
+}
+
 /** MusicBrainz votes are 0-5 stars; the score scale is 0-10. */
 const starsToScore = (stars: number) => round2(clamp(stars * 2, 0, 10));
 
@@ -229,6 +257,12 @@ export interface ScoreInputs {
   lastfmPlays?: number | null;
   /** Reddit posts mentioning the track, and their combined upvotes. */
   reddit?: { posts: number; upvotes: number } | null;
+  /**
+   * The track's best year-end singles chart placing, if it ever charted.
+   * Absence is not evidence of badness — most records never chart — so this
+   * only ever lifts a score, never holds one down.
+   */
+  chartPeak?: { year: number; rank: number } | null;
   /** Highest sales certification on record for the track, if any. */
   certification?: Certification | null;
 }
@@ -318,6 +352,17 @@ export function computePublicScore(inputs: ScoreInputs): PublicScore {
       ),
       weight: weights.lastfmPlays,
       detail: { playcount: inputs.lastfmPlays },
+    });
+  }
+
+  if (inputs.chartPeak && inputs.chartPeak.rank > 0) {
+    signals.push({
+      source: 'chart_peak',
+      label: 'Year-end chart peak',
+      kind: 'popularity',
+      score: chartScore(inputs.chartPeak.rank),
+      weight: weights.chartPeak,
+      detail: { rank: inputs.chartPeak.rank, year: inputs.chartPeak.year },
     });
   }
 

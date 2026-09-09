@@ -36,6 +36,7 @@ import {
 } from '../_lib/spotify.js';
 import { mapPool } from '../_lib/pool.js';
 import { computePublicScore, type PublicScore } from '../_lib/score.js';
+import { lookupPeaks } from '../_lib/chartstore.js';
 import { serviceClient } from '../_lib/supabase.js';
 import { param, requireGet, sendError, sendJson } from '../_lib/respond.js';
 
@@ -200,6 +201,13 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       .then((top) => top?.peakRank ?? null)
       .catch(() => null);
 
+    // Stored chart data, so this is a single local query rather than another
+    // upstream round trip. It never fails the request: no placing found and no
+    // placing on record look the same to the score.
+    const chartPeaks = await lookupPeaks(
+      tracks.map((t) => ({ title: t.trackName, artist: t.artistName })),
+    ).catch(() => new Map<string, { year: number; rank: number }>());
+
     const deezerBackfill = await backfillDeezerRanks(
       album.artistName,
       tracks,
@@ -224,6 +232,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         artistPeakRank,
         lastfmPlays: lastfm?.listenersByTitle.get(key) ?? null,
         reddit: reddit.get(t) ?? null,
+        chartPeak: chartPeaks.get(t.trackName) ?? null,
       });
       return { track: t, score };
     });
