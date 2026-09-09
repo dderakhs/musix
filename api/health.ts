@@ -39,11 +39,20 @@ interface Upstream {
 async function checkSupabase(): Promise<Upstream> {
   const db = serviceClient();
   if (!db) {
+    // Name the variable that is actually absent. These two are set at different
+    // times and for different reasons — the URL goes in with the browser config,
+    // the service role key only when the API needs to write — so "one of these
+    // two is missing" sends you looking in the wrong place half the time.
+    const hasUrl = Boolean(process.env.SUPABASE_URL ?? process.env.VITE_SUPABASE_URL);
+    const hasKey = Boolean(process.env.SUPABASE_SERVICE_ROLE_KEY);
+    const missing = [!hasUrl && 'SUPABASE_URL', !hasKey && 'SUPABASE_SERVICE_ROLE_KEY']
+      .filter(Boolean)
+      .join(' and ');
     return {
       needsCredentials: true,
       configured: false,
       reachable: null,
-      detail: 'SUPABASE_URL or SUPABASE_SERVICE_ROLE_KEY missing',
+      detail: `${missing} missing`,
       contributes: 'user ratings, comments, cached catalogue, chart data',
     };
   }

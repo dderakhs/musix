@@ -114,6 +114,66 @@ export async function checkSpotifyAuth(): Promise<SpotifyTokenResult> {
   return requestToken();
 }
 
+/**
+ * Find the album, tolerating how the two catalogues write a title.
+ *
+ * Spotify's field filters are exact and unforgiving, and iTunes rarely hands
+ * over a bare title — it appends "- Single", "(Deluxe)", a year, an edition.
+ * `album:"ICEMAN (Deluxe)"` then matches nothing at all, which is
+ * indistinguishable from the record not existing. So the filtered query is
+ * tried first for precision, then progressively looser ones, and the artist is
+ * checked on the result rather than trusting whatever came back first.
+ */
+async function findAlbum(
+  artist: string,
+  album: string,
+  headers: Record<string, string>,
+): Promise<{ id: string; name: string; artists?: Array<{ id: string; name: string }> } | null> {
+  const cleanAlbum = album.replace(/"/g, '');
+  const cleanArtist = artist.replace(/"/g, '');
+  const bare = normaliseTitle(album);
+  const wantedArtist = normaliseTitle(artist);
+
+  const queries = [
+    `album:"${cleanAlbum}" artist:"${cleanArtist}"`,
+    // Same filters, but on the title stripped of editions and qualifiers.
+    ...(bare && bare !== normaliseTitle(cleanAlbum) ? [`album:"${bare}" artist:"${cleanArtist}"`] : []),
+    // No filters at all: Spotify's relevance ranking is good, and the artist
+    // check below is what keeps this honest.
+    `${cleanAlbum} ${cleanArtist}`,
+  ];
+
+  for (const query of queries) {
+    const search = await fetchJsonOrNull<SpotifySearch>(
+      `${API}/search?q=${encodeURIComponent(query)}&type=album&limit=10`,
+      { upstream: 'spotify', headers },
+    );
+    const candidates = search?.albums?.items ?? [];
+    if (candidates.length === 0) continue;
+
+    // Only ever accept an album by the artist asked for. Without this the
+    // unfiltered query would happily return a covers record or a mixtape that
+    // merely shares the title.
+    const byArtist = candidates.filter((a) =>
+      (a.artists ?? []).some((x) => {
+        const name = normaliseTitle(x.name);
+        return name === wantedArtist || name.includes(wantedArtist) || wantedArtist.includes(name);
+      }),
+    );
+    if (byArtist.length === 0) continue;
+
+    const exact = byArtist.find((a) => normaliseTitle(a.name) === bare);
+    if (exact) return exact;
+    // A title that merely starts the same is usually an edition of the record.
+    const partial = byArtist.find(
+      (a) => normaliseTitle(a.name).startsWith(bare) || bare.startsWith(normaliseTitle(a.name)),
+    );
+    if (partial) return partial;
+    if (query.startsWith('album:')) return byArtist[0];
+  }
+  return null;
+}
+
 /** Popularity for every track on a record, in about four requests. */
 export async function fetchAlbumPopularity(
   artist: string,
@@ -123,16 +183,8 @@ export async function fetchAlbumPopularity(
   if (!token) return null;
   const headers = { Authorization: `Bearer ${token}` };
 
-  const query = `album:"${album.replace(/"/g, '')}" artist:"${artist.replace(/"/g, '')}"`;
-  const search = await fetchJsonOrNull<SpotifySearch>(
-    `${API}/search?q=${encodeURIComponent(query)}&type=album&limit=5`,
-    { upstream: 'spotify', headers },
-  );
-
-  const candidates = search?.albums?.items ?? [];
-  if (candidates.length === 0) return null;
-  const wanted = normaliseTitle(album);
-  const match = candidates.find((a) => normaliseTitle(a.name) === wanted) ?? candidates[0];
+  const match = await findAlbum(artist, album, headers);
+  if (!match) return null;
 
   const listing = await fetchJsonOrNull<SpotifyAlbumTracks>(
     `${API}/albums/${match.id}/tracks?limit=50`,
