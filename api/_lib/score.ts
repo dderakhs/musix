@@ -39,10 +39,18 @@ export const TUNING = {
     musicbrainzRecording: 2.5,
     /** Album-level votes, a weak prior for tracks with none of their own. */
     musicbrainzReleaseGroup: 1.0,
+    /**
+     * Spotify's own popularity index. The heaviest weight in the model because
+     * it is the only signal already normalised across the whole catalogue —
+     * every other source has to be corrected for era, genre or platform reach
+     * before it can be compared to anything else.
+     */
+    spotifyPopularity: 3.5,
     /** Lyrics pageviews: the sharpest per-track attention signal available. */
     geniusPageviews: 2.5,
-    /** Streaming rank. */
-    deezerRank: 2.0,
+    /** Streaming rank. Demoted once Spotify is available: it measures the same
+     *  thing more crudely and with a heavier bias towards recent releases. */
+    deezerRank: 1.5,
     /** Scrobbles: broad, but under-counts recent releases and rap especially. */
     lastfmPlays: 1.5,
     /** Discussion volume. Keyword search, so deliberately modest. */
@@ -62,6 +70,8 @@ export const TUNING = {
      * suggest.
      */
     catalogueShare: { exponent: 0.4 },
+    /** Spotify popularity is a 0-100 index, so it curves over its own range. */
+    spotifyPopularity: { exponent: 0.6 },
     lastfmPlays: { midpoint: 4.6, steepness: 1.5 },
     geniusPageviews: { midpoint: 5.2, steepness: 2.0 },
     // Post counts are small numbers; ten posts is already real discussion.
@@ -116,6 +126,7 @@ export interface ScoreSignal {
   source:
     | 'musicbrainz_recording'
     | 'musicbrainz_release_group'
+    | 'spotify_popularity'
     | 'genius_pageviews'
     | 'deezer_rank'
     | 'lastfm_plays'
@@ -188,6 +199,8 @@ const voteConfidence = (votes: number) =>
 export interface ScoreInputs {
   recordingRating?: { value: number; votes: number } | null;
   releaseGroupRating?: { value: number; votes: number } | null;
+  /** Spotify track popularity, 0-100. */
+  spotifyPopularity?: number | null;
   /** Genius lyrics pageviews for the track. */
   geniusPageviews?: number | null;
   /** Deezer track rank, roughly 0-1,000,000. */
@@ -230,6 +243,19 @@ export function computePublicScore(inputs: ScoreInputs): PublicScore {
       score: starsToScore(value),
       weight: round2(weights.musicbrainzReleaseGroup * voteConfidence(votes)),
       detail: { stars: value, votes },
+    });
+  }
+
+  if (typeof inputs.spotifyPopularity === 'number' && inputs.spotifyPopularity > 0) {
+    signals.push({
+      source: 'spotify_popularity',
+      label: 'Spotify popularity',
+      kind: 'popularity',
+      score: round2(
+        clamp(10 * (inputs.spotifyPopularity / 100) ** curves.spotifyPopularity.exponent, 0, 10),
+      ),
+      weight: weights.spotifyPopularity,
+      detail: { popularity: inputs.spotifyPopularity },
     });
   }
 

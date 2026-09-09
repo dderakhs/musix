@@ -30,6 +30,10 @@ import {
 import { fetchAlbumListeners, type LastfmAlbumData } from '../_lib/lastfm.js';
 import { fetchTrackStats, geniusEnabled, type GeniusTrackStats } from '../_lib/genius.js';
 import { fetchTrackBuzz, redditEnabled, type RedditTrackBuzz } from '../_lib/reddit.js';
+import {
+  fetchAlbumPopularity as fetchSpotifyAlbum,
+  type SpotifyAlbumData,
+} from '../_lib/spotify.js';
 import { mapPool } from '../_lib/pool.js';
 import { computePublicScore, type PublicScore } from '../_lib/score.js';
 import { serviceClient } from '../_lib/supabase.js';
@@ -171,7 +175,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     }
 
     const deadline = Date.now() + ENRICHMENT_BUDGET_MS;
-    const [mb, deezer, lastfm, genius, reddit] = await Promise.all([
+    const [mb, deezer, lastfm, genius, reddit, spotify] = await Promise.all([
       enrichMusicBrainz(album.artistName, album.collectionName, deadline).catch(() => null),
       enrichDeezer(album.artistName, album.collectionName).catch(() => null),
       fetchAlbumListeners(album.artistName, album.collectionName).catch(
@@ -182,6 +186,9 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       ),
       enrichReddit(album.artistName, tracks, deadline).catch(
         () => new Map<ItunesTrack, RedditTrackBuzz>(),
+      ),
+      fetchSpotifyAlbum(album.artistName, album.collectionName).catch(
+        () => null as SpotifyAlbumData | null,
       ),
     ]);
 
@@ -211,6 +218,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       const score = computePublicScore({
         recordingRating: rec?.value != null ? { value: rec.value, votes: rec['votes-count'] } : null,
         releaseGroupRating,
+        spotifyPopularity: spotify?.popularityByTitle.get(key) ?? null,
         geniusPageviews: genius.get(t)?.pageviews ?? null,
         deezerRank: deezer?.rankByTitle.get(key) ?? deezerBackfill.get(t.trackId) ?? null,
         artistPeakRank,
@@ -265,6 +273,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
           lastfm: Boolean(lastfm),
           genius: genius.size > 0,
           reddit: reddit.size > 0,
+          spotify: Boolean(spotify),
         },
       },
       // Short cache: user scores are part of this payload and must stay fresh.

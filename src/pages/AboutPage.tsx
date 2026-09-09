@@ -29,8 +29,9 @@ export default function AboutPage() {
         </p>
         <ul className="about-list">
           <li><strong>MusicBrainz</strong> — community star ratings and vote counts, weighted by how many people voted.</li>
+          <li><strong>Spotify</strong> — the popularity index each track carries, normalised across the whole catalogue; the heaviest single input.</li>
           <li><strong>Genius</strong> — lyrics pageviews, the sharpest per-track measure of attention available.</li>
-          <li><strong>Deezer</strong> — listener rank, and the fan counts that order artist search.</li>
+          <li><strong>Deezer</strong> — listener rank, judged against the artist&rsquo;s own catalogue peak so an older record is not marked down simply for being old, plus the fan counts that order artist search.</li>
           <li><strong>Last.fm</strong> — scrobble counts.</li>
           <li><strong>Reddit</strong> — how much a track is actually discussed.</li>
           <li><strong>Sales certifications</strong> — gold through diamond, the one audited measure of scale in the model.</li>
