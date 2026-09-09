@@ -46,11 +46,32 @@ export function spotifyEnabled(): boolean {
   return Boolean(process.env.SPOTIFY_CLIENT_ID && process.env.SPOTIFY_CLIENT_SECRET);
 }
 
-async function accessToken(): Promise<string | null> {
+/**
+ * Why a token request failed, for the health endpoint.
+ *
+ * A silent null is right for the album path — a missing signal must never fail
+ * a page — but it is useless when you are trying to work out why Spotify is
+ * not contributing. Credentials absent, credentials rejected, and Spotify
+ * being unreachable all look identical from the outside and need different
+ * fixes, so the reason is recorded here rather than thrown away.
+ *
+ * Spotify's own error slug ("invalid_client") is safe to surface: it describes
+ * the request, not the secret.
+ */
+export interface SpotifyTokenResult {
+  token: string | null;
+  reason: 'ok' | 'cached' | 'not_configured' | 'rejected' | 'no_token_in_body' | 'unreachable';
+  status?: number;
+  error?: string;
+}
+
+async function requestToken(): Promise<SpotifyTokenResult> {
   const id = process.env.SPOTIFY_CLIENT_ID?.trim();
   const secret = process.env.SPOTIFY_CLIENT_SECRET?.trim();
-  if (!id || !secret) return null;
-  if (cachedToken && Date.now() < cachedToken.expiresAt) return cachedToken.value;
+  if (!id || !secret) return { token: null, reason: 'not_configured' };
+  if (cachedToken && Date.now() < cachedToken.expiresAt) {
+    return { token: cachedToken.value, reason: 'cached' };
+  }
 
   try {
     const res = await fetch(TOKEN_URL, {
@@ -62,18 +83,35 @@ async function accessToken(): Promise<string | null> {
       body: 'grant_type=client_credentials',
       signal: AbortSignal.timeout(6000),
     });
-    if (!res.ok) return null;
+    if (!res.ok) {
+      const body = (await res.json().catch(() => null)) as { error?: string } | null;
+      return { token: null, reason: 'rejected', status: res.status, error: body?.error };
+    }
     const body = (await res.json()) as { access_token?: string; expires_in?: number };
-    if (!body.access_token) return null;
+    if (!body.access_token) return { token: null, reason: 'no_token_in_body', status: res.status };
     cachedToken = {
       value: body.access_token,
       // Retire a minute early rather than race the expiry mid-request.
       expiresAt: Date.now() + Math.max(60, (body.expires_in ?? 3600) - 60) * 1000,
     };
-    return cachedToken.value;
-  } catch {
-    return null;
+    return { token: cachedToken.value, reason: 'ok', status: res.status };
+  } catch (err) {
+    return {
+      token: null,
+      reason: 'unreachable',
+      error: err instanceof Error ? err.message : String(err),
+    };
   }
+}
+
+/** The token, or null — the album path's view, where a failure is just absence. */
+async function accessToken(): Promise<string | null> {
+  return (await requestToken()).token;
+}
+
+/** Probe the credentials without using them, for /api/health. */
+export async function checkSpotifyAuth(): Promise<SpotifyTokenResult> {
+  return requestToken();
 }
 
 /** Popularity for every track on a record, in about four requests. */
