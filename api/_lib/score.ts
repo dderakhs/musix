@@ -57,12 +57,18 @@ export const TUNING = {
     redditPosts: 1.0,
   },
   curves: {
-    // Deezer is the odd one out: `rank` is already a bounded 0-1,000,000
-    // popularity index, not an unbounded count, so it gets a power curve over
-    // the fraction of that range rather than a logistic over its magnitude. A
-    // log curve compresses 300k and 950k into half a decade and scores both as
-    // hits, which is exactly the over-reading this replaces.
-    deezerRank: { exponent: 0.55 },
+    /**
+     * Deezer's `rank` is a bounded 0-1,000,000 index, but it is nowhere near
+     * uniform over that range: the catalogue is overwhelmingly bunched at the
+     * bottom and only a handful of global smashes ever approach the ceiling.
+     * Curving over the *linear* share of the range therefore assumes a spread
+     * that does not exist, and squashes the entire real distribution into the
+     * lower half of the scale — a rank of 225k, which is genuinely deep into
+     * the popular tail, came out at 4.4 rather than the 8.8 it deserves. So
+     * this curves over the order of magnitude, like every other count-based
+     * signal here, with the midpoint set where the mass actually sits.
+     */
+    deezerRank: { midpoint: 4.7, steepness: 3.05 },
     /**
      * How a track sits within its own artist's catalogue, as a share of their
      * peak. The gentler exponent is the point: within one artist, the gap
@@ -164,10 +170,18 @@ export function popularityToScore(count: number, midpoint: number, steepness: nu
   return round2(clamp(10 / (1 + Math.exp(-(magnitude - midpoint) * steepness)), 0, 10));
 }
 
-/** Deezer's bounded rank: a power curve over its share of the 0-1,000,000 range. */
-export function rankToScore(rank: number, exponent: number): number {
+/**
+ * Deezer's bounded rank, curved over its order of magnitude.
+ *
+ * The bound is real but misleading: ranks are concentrated at the low end, so
+ * what matters is where a track sits in that skewed distribution, not what
+ * fraction of 1,000,000 it reached. 50k is middling, 225k is a hit, and
+ * everything past ~500k is a smash separated only by hairs — which is what
+ * this curve says and a linear-share curve does not.
+ */
+export function rankToScore(rank: number, midpoint: number, steepness: number): number {
   if (!Number.isFinite(rank) || rank <= 0) return 0;
-  return round2(clamp(10 * clamp(rank / 1_000_000, 0, 1) ** exponent, 0, 10));
+  return popularityToScore(rank, midpoint, steepness);
 }
 
 /**
@@ -176,12 +190,13 @@ export function rankToScore(rank: number, exponent: number): number {
  * relative to, so it falls back to the absolute reading.
  */
 export function streamingScore(rank: number, artistPeakRank: number | null): number {
-  const absolute = rankToScore(rank, TUNING.curves.deezerRank.exponent);
+  const { midpoint, steepness } = TUNING.curves.deezerRank;
+  const absolute = rankToScore(rank, midpoint, steepness);
   if (!artistPeakRank || artistPeakRank <= 0) return absolute;
 
   // The artist's own peak sets the ceiling; the track is placed beneath it by
   // its share of that peak.
-  const ceiling = rankToScore(artistPeakRank, TUNING.curves.deezerRank.exponent);
+  const ceiling = rankToScore(artistPeakRank, midpoint, steepness);
   const share = clamp(rank / artistPeakRank, 0, 1);
   const relative = ceiling * share ** TUNING.curves.catalogueShare.exponent;
 
